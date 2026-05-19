@@ -11,11 +11,12 @@ The goal of this repo is to strengthen:
 ---
 
 ## 📁 Repository Structure
-
+```
 cpp-practice/
 ├── Basics/
 ├── DataStructures/
 ├── Tracking/
+```
 
 ### Basics/
 Introductory programs focused on core C++ concepts:
