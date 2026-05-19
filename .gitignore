@@ -12,6 +12,8 @@ data-structures/*
 
 tracking/*
 !tracking/*.cpp
+!tracking/*.hpp
+!tracking/*.md
 
 # Mac system files
 .DS_Store
