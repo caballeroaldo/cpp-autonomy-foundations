@@ -13,9 +13,9 @@ The goal of this repo is to strengthen:
 ## 📁 Repository Structure
 ```
 cpp-practice/
-├── Basics/
-├── DataStructures/
-├── Tracking/
+├── basics/
+├── data-structures/
+├── tracking/
 ```
 
 ### Basics/
