@@ -2,6 +2,7 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+#include <algorithm>
 using namespace std;
 
 struct Point {
@@ -77,16 +78,19 @@ Node* buildKDTree(vector<KDItem> items, int depth = 0) {
     return root;
 }
 
-KDItem nearestNeighborHelper(Node* root, const Point& query, KDItem best, double& bestDist) {
+KDItem nearestNeighborHelper(Node* root, const Point& query, KDItem best, double& bestDist, const vector<bool>& trackUsed) {
     if (root == nullptr) {
         return best;
     }
 
-    double currentDist = squaredDistance(query, root->item.point);
+    int currentTrackIndex = root->item.trackIndex;
 
-    if (currentDist < bestDist) {
-        bestDist = currentDist;
-        best = root->item;
+    if (!trackUsed[currentTrackIndex]) {
+        double currentDist = squaredDistance(query, root->item.point);
+        if (currentDist < bestDist) {
+            bestDist = currentDist;
+            best = root->item;
+        }
     }
 
     int axis = root->axis;
@@ -102,7 +106,7 @@ KDItem nearestNeighborHelper(Node* root, const Point& query, KDItem best, double
         second = root->left;
     }
 
-    best = nearestNeighborHelper(first, query, best, bestDist);
+    best = nearestNeighborHelper(first, query, best, bestDist, trackUsed);
 
     double axisDiff = 0;
     if (axis == 0) {
@@ -112,20 +116,33 @@ KDItem nearestNeighborHelper(Node* root, const Point& query, KDItem best, double
     }
 
     if (axisDiff * axisDiff < bestDist) {
-        best = nearestNeighborHelper(second, query, best, bestDist);
+        best = nearestNeighborHelper(second, query, best, bestDist, trackUsed);
     }
 
     return best;
 }
 
-KDItem nearestNeighbor(Node* root, const Point& query) {
+KDItem nearestNeighbor(Node* root, const Point& query, const vector<bool>& trackUsed) {
     if (root == nullptr) {
         return {{0,0}, -1};
     }
 
-    KDItem best = root->item;
-    double bestDist = squaredDistance(query, root->item.point);
-    return nearestNeighborHelper(root, query, best, bestDist);
+    KDItem best = {{0, 0}, -1};
+    double bestDist = numeric_limits<double>::max();
+
+    return nearestNeighborHelper(root, query, best, bestDist, trackUsed);
+}
+
+int findBestUnusedTrackIndex(Node* root, const Point& query, const vector<bool>& trackUsed, double& bestDist) {
+    KDItem nearest = nearestNeighbor(root, query, trackUsed);
+
+    if (nearest.trackIndex == -1) {
+        bestDist = numeric_limits<double>::max();
+        return -1;
+    }
+
+    bestDist = squaredDistance(query, nearest.point);
+    return nearest.trackIndex;
 }
 
 void deleteTree(Node* root) {
@@ -223,11 +240,7 @@ int main() {
             
             
             if (root != nullptr && !tracks.empty()) {
-                KDItem nearest = nearestNeighbor(root, p);
-                bestTrackIndex = nearest.trackIndex;
-                if (bestTrackIndex != -1) {
-                    minDist = squaredDistance(p, tracks[bestTrackIndex].position);
-                }
+                bestTrackIndex = findBestUnusedTrackIndex(root, p, trackUsed, minDist);
             }
             if (bestTrackIndex != -1 && !trackUsed[bestTrackIndex] && minDist < distanceThreshold) {
                 // Match to existing track
@@ -249,6 +262,9 @@ int main() {
                 cout << "Created new Track " << newTrack.id << " for point (" << p.x << ", " << p.y << ")\n";
             }
         }
+
+        // Memory clean up
+        deleteTree(root);
 
         // update missedFrames
         for (int i = 0; i < tracks.size(); i++) {

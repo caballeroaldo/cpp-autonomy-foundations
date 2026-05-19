@@ -42,8 +42,11 @@ Current programs:
 ---
 
 ### Tracking/
-Programs related to object tracking and perception concepts.
-- object-tracker.cpp - Implements a foundational object tracking system that associates detections across frames using spatial proximity, forming a core component of real-time perception pipelines.
+Projects focused on object tracking and state management across frames.
+
+Programs:
+- Multi-Frame Object Tracker ⭐  
+  A modular C++ tracking system that maintains object identities across sequential frames using KD-tree accelerated nearest-neighbor matching, trajectory history, stale-track deletion, and frame-aware observations.
 
 Planned:
 - Bounding box utilities (IoU)
