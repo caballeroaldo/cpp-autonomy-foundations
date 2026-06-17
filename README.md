@@ -17,9 +17,9 @@ The goal of this repository is to strengthen:
 ```text
 cpp-autonomy-foundations/
 ├── basics/
-├── data-structures/
+├── data_structures/
 ├── tracking/
-├── perception-pipeline/
+├── perception_pipeline/
 └── README.md
 ```
 

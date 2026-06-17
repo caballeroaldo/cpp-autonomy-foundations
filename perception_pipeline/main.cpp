@@ -1,10 +1,30 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include "tracking/tracker.hpp"
-#include "frame-loader.hpp"
+#include <filesystem>
+#include "../tracking/tracker.hpp"
+#include "frame_loader.hpp"
 
 using namespace std;
+namespace fs = std::filesystem;
+
+vector<string> getFrameFiles(const string& folderPath) {
+    vector<string> files;
+    
+    if(!fs::exists(folderPath) || !fs::is_directory(folderPath)) {
+        cerr << "Error: frames folder not found: " << folderPath << "\n";
+        return files;
+    }
+
+    for (const auto& entry: fs::directory_iterator(folderPath)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".txt") {
+            files.push_back(entry.path().string());
+        }
+    }
+
+    sort(files.begin(), files.end());
+    return files;
+}
 
 int main() {
     vector<Track> tracks;
@@ -13,11 +33,12 @@ int main() {
     const double distanceThreshold = 1000;
     const int maxMissedFrames = 3;
 
-    vector<string> frameFiles = {
-        "frames/frame1.txt",
-        "frames/frame2.txt",
-        "frames/frame3.txt"
-    };
+    vector<string> frameFiles = getFrameFiles("frames");
+
+    if (frameFiles.empty()) {
+        cerr << "No frame files found in frames/\n";
+        return 1;
+    }
 
     int frameNumber = 1;
 

@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "tracking/tracker.hpp"
+#include "../tracking/tracker.hpp"
 
 std::vector<Point> loadFrame(const std::string& filename);
 
