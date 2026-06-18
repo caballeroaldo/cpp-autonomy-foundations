@@ -4,6 +4,7 @@
 #include <filesystem>
 #include "../tracking/tracker.hpp"
 #include "frame_loader.hpp"
+#include "trajectory_export.hpp"
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -144,6 +145,8 @@ int main() {
     for (const Track& t: tracks) {
         printTrackHistory(t);
     }
+
+    exportTrackHistories(tracks, "output");
 
     return 0;
 }
