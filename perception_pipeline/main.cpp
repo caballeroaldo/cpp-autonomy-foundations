@@ -27,14 +27,15 @@ vector<string> getFrameFiles(const string& folderPath) {
     return files;
 }
 
-int main() {
+int main(int argc, char** argv) {
     vector<Track> tracks;
     int nextTrackId = 0;
 
     const double distanceThreshold = 1000;
     const int maxMissedFrames = 3;
 
-    vector<string> frameFiles = getFrameFiles("frames");
+    string frameFolder = (argc > 1) ? argv[1] : "frames";
+    vector<string> frameFiles = getFrameFiles(frameFolder);
 
     if (frameFiles.empty()) {
         cerr << "No frame files found in frames/\n";

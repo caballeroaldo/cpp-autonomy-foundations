@@ -95,30 +95,39 @@ See: `tracking/README.md`
 
 Projects focused on moving from manually entered detections toward perception-style data pipelines.
 
-### Planned Work
+### Current Features
 
 - File-based frame ingestion
-- Detection pipeline architecture
-- Frame loaders and parsers
-- Trajectory export
-- Visualization tooling
-- Simulation integration
+- Automatic frame discovery
+- Detection-to-tracker integration
+- Synthetic traffic generation
+- Trajectory export (CSV)
+- Python trajectory visualization
 
-### Goal
+### Pipeline Architecture
 
 ```text
-Detection Source
-       ↓
+Synthetic Traffic Generator
+          ↓
+Frame Files
+          ↓
 Frame Loader
-       ↓
+          ↓
 KD-Tree Matching
-       ↓
+          ↓
 Tracker
-       ↓
-Trajectory Output
+          ↓
+Trajectory Export
+          ↓
+Trajectory Visualization
 ```
 
-This phase serves as the bridge between algorithm development and full perception systems.
+### Example Visualization
+
+Synthetic traffic tracking scenario generated using the perception pipeline
+![Synthetic Traffic Tracking Demo](perception_pipeline/output/trajectory_plot.png)
+
+Each colored trajectory represents a tracked object. Frame labels indicate temporal progression and demonstrate persistent object identity across sequential observations.
 
 ---
 
@@ -196,19 +205,49 @@ clang++ -std=c++17 -Wall -Wextra Basics/calculator.cpp -o calculator
 
 ## Phase 4 — Perception Pipeline Foundations 🚧
 
-### Current Focus
+### Completed
 
 - File-based detection ingestion
-- Pipeline architecture
+- Automatic frame discovery
 - Detection-to-tracking integration
-- Trajectory export
-- Visualization preparation
+- Trajectory export (CSV)
+- Synthetic traffic generation
+- Trajectory visualization
 
-### Future
+### Next Steps
 
-- Simulation inputs
+- More realistic traffic simulation
+- Motion prediction
 - OpenCV integration
-- Real-time perception systems
+- Video-based detections
+
+---
+
+# 🏁 Current Milestone
+
+Completed:
+
+- ✅ KD-Tree implementation
+- ✅ Multi-frame object tracking
+- ✅ KD-tree accelerated matching
+- ✅ Modular tracker architecture
+- ✅ Perception pipeline foundations
+- ✅ Synthetic traffic generation
+- ✅ Trajectory export (CSV)
+- ✅ Trajectory visualization
+
+Currently Working On:
+
+- 🚧 More realistic traffic simulation
+- 🚧 Motion prediction concepts
+- 🚧 Perception system expansion
+
+Future Goals:
+
+- ⬜ Kalman filtering
+- ⬜ OpenCV integration
+- ⬜ Video-based detections
+- ⬜ Full perception pipeline
 
 ---
 
@@ -217,21 +256,17 @@ clang++ -std=c++17 -Wall -Wextra Basics/calculator.cpp -o calculator
 Building a perception pipeline foundation by separating:
 
 ```text
-Detection Source
-       ↓
+Synthetic Traffic Generator
+          ↓
+Frame Files
+          ↓
+Frame Loader
+          ↓
 Tracking System
-```
-
-and moving toward:
-
-```text
-Detection Source
-       ↓
-Perception Pipeline
-       ↓
-Tracking System
-       ↓
-Trajectory Analysis
+          ↓
+Trajectory Export
+          ↓
+Visualization
 ```
 
 ---

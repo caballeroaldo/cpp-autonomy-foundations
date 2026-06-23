@@ -23,13 +23,15 @@ This phase bridges the gap between a terminal-based tracker and a more complete 
 # Features
 
 - File-based frame loading
-- Detection ingestion from text files
-- Frame-by-frame processing
+- Automatic frame discovery
+- Synthetic traffic generation
 - KD-tree accelerated nearest-neighbor matching
 - Persistent track identities
-- Trajectory history
+- Frame-aware trajectory history
 - Missed-frame handling
 - Stale-track deletion
+- Trajectory export to CSV
+- Python-based trajectory visualization
 
 ---
 
@@ -38,11 +40,22 @@ This phase bridges the gap between a terminal-based tracker and a more complete 
 ```text
 perception-pipeline/
 ├── frames/
-│   ├── frame1.txt
-│   ├── frame2.txt
-│   ├── frame3.txt
+│   ├── intersection_demo/
+│   │   ├── frame_01.txt
+│   │   ├── frame_02.txt
+│   │   └── ...
+│
+├── output/
+│   ├── track_0.csv
+│   ├── track_1.csv
+│   └── trajectory_plot.png
+│
 ├── frame_loader.hpp
 ├── frame_loader.cpp
+├── trajectory_export.hpp
+├── trajectory_export.cpp
+├── generate_traffic_frames.py
+├── visualize_tracks.py
 ├── main.cpp
 └── README.md
 ```
@@ -94,22 +107,52 @@ Example:
 
 ---
 
+# Synthetic Traffic Generator
+
+The pipeline includes a synthetic traffic generator that creates realistic frame-by-frame detections.
+
+Current scenarios include:
+
+- Horizontal traffic
+- Vertical traffic
+- Crossing traffic
+- Late-entering vehicles
+- Merge-like behavior
+- Curved trajectories
+
+Generate a dataset:
+
+```bash
+python3 generate_traffic_frames.py \
+    --output frames/intersection_demo \
+    --frames 10 \
+    --clear
+```
+
+The generated frames are then consumed directly by the perception pipeline.
+
+---
+
 # Pipeline Flow
 
-For each frame, the pipeline works as follows:
+The current perception pipeline follows the architecture below:
 
 ```text
-Frame File
-   ↓
+Synthetic Traffic Generator
+          ↓
+Frame Files
+          ↓
 Frame Loader
-   ↓
+          ↓
 Detection List
-   ↓
+          ↓
 KD-Tree Matching
-   ↓
+          ↓
 Tracker Update
-   ↓
-Trajectory Output
+          ↓
+Trajectory Export (CSV)
+          ↓
+Trajectory Visualization
 ```
 
 This structure separates detection input from tracking logic, which is an important step toward perception systems.
@@ -187,6 +230,26 @@ Track 2 [missed=0]
 
 ---
 
+# Visualization
+
+Trajectory data is exported as CSV files and visualized using a Python plotting utility.
+
+Generate the visualization:
+
+```bash
+python3 visualize_tracks.py
+```
+
+Example output:
+
+![Synthetic Traffic Tracking Demo](output/trajectory_plot.png)
+
+Each colored trajectory represents a tracked object.
+
+Frame labels (`F1`, `F2`, etc.) indicate temporal progression and demonstrate persistent object identity across frames.
+
+---
+
 # Why This Phase Matters
 
 This project is the first step toward a larger perception pipeline because it introduces:
@@ -202,15 +265,16 @@ Instead of manually typing points into the terminal, the tracker now consumes de
 
 # Current Limitations
 
-The current implementation intentionally keeps the pipeline simple.
+The current implementation intentionally keeps the perception pipeline simple.
 
 Known limitations:
 
-- Frame data comes from text files, not real sensors
-- Matching is still greedy
+- Frame data comes from synthetic detections rather than real sensors
+- Matching is still greedy and not globally optimal
+- No motion prediction (Kalman filtering)
 - No image or video processing yet
-- No OpenCV visualization yet
-- No motion prediction yet
+- No OpenCV integration yet
+- No Hungarian assignment optimization
 
 ---
 
@@ -218,12 +282,13 @@ Known limitations:
 
 Planned next steps include:
 
-- Reading detections from simulated sources
-- Exporting trajectories to files
-- Visualizing tracks graphically
-- Integrating OpenCV
-- Connecting the tracker to real perception outputs
-- Building toward a full perception pipeline
+- More realistic traffic simulation scenarios
+- Hungarian algorithm assignment
+- Kalman filter motion prediction
+- OpenCV-based visualization
+- Video-based detections
+- Real sensor integration
+- End-to-end perception pipeline development
 
 ---
 
@@ -242,8 +307,32 @@ This project strengthens:
 
 # Relationship to the Tracker Project
 
-This folder builds directly on the work done in the `Tracking/` folder.
+This folder builds directly on the work done in the `tracking/` folder.
 
-The `Tracking/` module provides the tracking engine, while this folder focuses on how detections enter the system and flow through the pipeline.
+The `tracking/` module provides the tracking engine, while this folder focuses on how detections enter the system and flow through the pipeline.
 
 Together, they form the foundation for a future perception-style application.
+
+---
+
+# Development Progress
+
+Completed:
+
+- ✅ File-based detection ingestion
+- ✅ Automatic frame discovery
+- ✅ KD-tree accelerated tracking
+- ✅ Trajectory export (CSV)
+- ✅ Synthetic traffic generation
+- ✅ Trajectory visualization
+
+In Progress:
+
+- 🚧 Perception pipeline foundations
+
+Planned:
+
+- ⬜ Motion prediction
+- ⬜ Assignment optimization
+- ⬜ Video-based perception
+- ⬜ OpenCV integration

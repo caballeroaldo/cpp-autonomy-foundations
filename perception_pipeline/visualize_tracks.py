@@ -7,13 +7,8 @@ from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 
+
 def read_track_csv(csv_path: Path) -> List[Tuple[int, float, float]]:
-    '''
-    Read a single track CSV in the format:
-        frame,x,y
-        1,100,200
-        2,105,205
-    '''
     points: List[Tuple[int, float, float]] = []
 
     with csv_path.open("r", newline="") as f:
@@ -21,29 +16,22 @@ def read_track_csv(csv_path: Path) -> List[Tuple[int, float, float]]:
         required = {"frame", "x", "y"}
 
         if reader.fieldnames is None or not required.issubset(reader.fieldnames):
-            raise ValueError(
-                f"{csv_path.name} must contain columns: frame,x,y"
-            )
+            raise ValueError(f"{csv_path.name} must contain columns: frame,x,y")
 
         for row in reader:
             frame = int(row["frame"])
             x = float(row["x"])
             y = float(row["y"])
             points.append((frame, x, y))
-    
+
     points.sort(key=lambda t: t[0])
     return points
 
 
 def load_tracks(output_dir: Path) -> Dict[str, List[Tuple[int, float, float]]]:
-    """
-    Load all track_*.csv files from the output directory.
-    """
-
     tracks: Dict[str, List[Tuple[int, float, float]]] = {}
 
     csv_files = sorted(output_dir.glob("track_*.csv"))
-
     if not csv_files:
         raise FileNotFoundError(f"No track_*.csv files found in {output_dir}")
 
@@ -52,43 +40,43 @@ def load_tracks(output_dir: Path) -> Dict[str, List[Tuple[int, float, float]]]:
 
     return tracks
 
+def friendly_track_name(track_stem: str, index: int) -> str:
+    # Convert track_0 -> Vehicle A, track_1 -> Vehicle B, etc.
+    return f"Vehicle {chr(ord('A') + index)}"
 
 def plot_tracks(tracks: Dict[str, List[Tuple[int, float, float]]], save_path: Path) -> None:
-    plt.figure(figsize=(10,8))
+    plt.figure(figsize=(12, 9))
 
-    for track_name, points in tracks.items():
+    for idx, (track_name, points) in enumerate(tracks.items()):
         xs = [p[1] for p in points]
         ys = [p[2] for p in points]
+        label = friendly_track_name(track_name, idx)
 
-        plt.plot(xs, ys, marker="o", linewidth=2, label=track_name)
+        plt.plot(xs, ys, marker="o", linewidth=2, label=label)
 
-        if points:
-            start_frame, start_x, start_y = points[0]
-            end_frame, end_x, end_y = points[-1]
-
+        # Label every point with its frame number
+        for frame, x, y in points:
             plt.annotate(
-                f"{track_name} start",
-                (start_x, start_y),
+                f"F{frame}",
+                (x, y),
                 textcoords="offset points",
-                xytext=(5,5)
-            )
-            plt.annotate(
-                f"{track_name} end",
-                (end_x, end_y),
-                textcoords="offset points",
-                xytext=(5, -12)
+                xytext=(4, 4),
+                fontsize=6,
             )
 
-    plt.title("Track Trajectories")
+    plt.title("KD-Tree Accelerated Multi-Object Tracking")
     plt.xlabel("x")
     plt.ylabel("y")
-    plt.legend()
     plt.grid(True)
     plt.gca().set_aspect("equal", adjustable="datalim")
+
+    # Move legend outside the plot to keep it clean
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
     plt.tight_layout()
 
-    plt.savefig(save_path, dpi=200)
+    plt.savefig(save_path, dpi=200, bbox_inches="tight")
     plt.show()
+
 
 def main() -> int:
     script_dir = Path(__file__).resolve().parent
@@ -107,6 +95,7 @@ def main() -> int:
     except Exception as e:
         print(f"Error: {e}")
         return 1
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
