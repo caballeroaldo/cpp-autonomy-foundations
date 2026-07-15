@@ -4,6 +4,8 @@ This project is the next step after the multi-frame object tracker. It begins to
 
 The goal of this phase is to build the foundations of a perception-style pipeline that can eventually support simulation input, visualization, and real detection sources.
 
+This project is part of a larger roadmap toward perception software engineering for autonomous driving, with each phase introducing progressively more realistic tracking, prediction, and pipeline architecture concepts.
+
 ---
 
 # Project Goals
@@ -26,6 +28,7 @@ This phase bridges the gap between a terminal-based tracker and a more complete 
 - Automatic frame discovery
 - Synthetic traffic generation
 - KD-tree accelerated nearest-neighbor matching
+- Constant-velocity motion prediction
 - Persistent track identities
 - Frame-aware trajectory history
 - Missed-frame handling
@@ -146,6 +149,8 @@ Frame Loader
           ↓
 Detection List
           ↓
+Motion Prediction
+          ↓
 KD-Tree Matching
           ↓
 Tracker Update
@@ -156,6 +161,21 @@ Trajectory Visualization
 ```
 
 This structure separates detection input from tracking logic, which is an important step toward perception systems.
+
+---
+
+# Motion Prediction
+
+To improve track association across sequential frames, the tracker estimates a constant velocity for every active track.
+
+Each successful track update performs the following steps:
+
+1. Compute the measured velocity using the previous and current object positions.
+2. Update the estimated track velocity.
+3. Predict the object's next position using a constant-velocity model.
+4. Build the KD-tree using predicted positions rather than the previous observations.
+
+Searching around predicted positions instead of previous positions improves robustness for consistently moving objects and serves as a conceptual foundation for future Kalman filter integration.
 
 ---
 
@@ -271,7 +291,7 @@ Known limitations:
 
 - Frame data comes from synthetic detections rather than real sensors
 - Matching is still greedy and not globally optimal
-- No motion prediction (Kalman filtering)
+- uses a simple contant-velocity prediction model rather than probabilistic state estimation
 - No image or video processing yet
 - No OpenCV integration yet
 - No Hungarian assignment optimization
@@ -284,7 +304,8 @@ Planned next steps include:
 
 - More realistic traffic simulation scenarios
 - Hungarian algorithm assignment
-- Kalman filter motion prediction
+- Velocity smoothing using exponential moving averages
+- Kalman filter state estimation
 - OpenCV-based visualization
 - Video-based detections
 - Real sensor integration
@@ -322,17 +343,21 @@ Completed:
 - ✅ File-based detection ingestion
 - ✅ Automatic frame discovery
 - ✅ KD-tree accelerated tracking
+- ✅ Constant-velocity motion prediction
 - ✅ Trajectory export (CSV)
 - ✅ Synthetic traffic generation
-- ✅ Trajectory visualization
+- ✅ Python Trajectory visualization
 
 In Progress:
 
-- 🚧 Perception pipeline foundations
+- 🚧 Velocity smoothing
+- 🚧 More realistic traffic simulation
+- 🚧 Motion Prediction refinement
 
 Planned:
 
-- ⬜ Motion prediction
-- ⬜ Assignment optimization
+- ⬜ Kalman filter state estimation
+- ⬜ Hungarian algorithm assignment
 - ⬜ Video-based perception
 - ⬜ OpenCV integration
+- ⬜ End-to-End perception pipeline

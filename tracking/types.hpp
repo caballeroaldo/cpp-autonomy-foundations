@@ -15,6 +15,7 @@ struct Observation {
 struct Track {
     int id;
     Point position;
+    Point velocity;
     int missedFrames;
     std::vector<Observation> history;
 };

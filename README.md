@@ -2,6 +2,8 @@
 
 This repository contains my C++ projects and systems-focused engineering work as I build toward developing software for autonomous driving, perception, robotics, and real-time systems.
 
+This repository follows a milestone-based development approach, where each project builds upon the previous one to gradually construct the foundations of an autonomous perception stack. Rather than relying on existing perception frameworks, each component is implemented from first principles to develop a deeper understanding of the underlying algorithms and system architecture.
+
 The goal of this repository is to strengthen:
 
 - Core C++ programming skills
@@ -100,6 +102,7 @@ Projects focused on moving from manually entered detections toward perception-st
 - File-based frame ingestion
 - Automatic frame discovery
 - Detection-to-tracker integration
+- Constant-velocity motion prediction
 - Synthetic traffic generation
 - Trajectory export (CSV)
 - Python trajectory visualization
@@ -112,6 +115,8 @@ Synthetic Traffic Generator
 Frame Files
           ↓
 Frame Loader
+          ↓
+Motion Prediction
           ↓
 KD-Tree Matching
           ↓
@@ -210,14 +215,15 @@ clang++ -std=c++17 -Wall -Wextra Basics/calculator.cpp -o calculator
 - File-based detection ingestion
 - Automatic frame discovery
 - Detection-to-tracking integration
-- Trajectory export (CSV)
+- Constant-velocity motion prediction
 - Synthetic traffic generation
+- Trajectory export (CSV)
 - Trajectory visualization
 
 ### Next Steps
 
-- More realistic traffic simulation
-- Motion prediction
+- Velocity smoothing
+- Kalman filter state estimation
 - OpenCV integration
 - Video-based detections
 
@@ -232,22 +238,23 @@ Completed:
 - ✅ KD-tree accelerated matching
 - ✅ Modular tracker architecture
 - ✅ Perception pipeline foundations
+- ✅ Constant-velocity motion prediction
 - ✅ Synthetic traffic generation
 - ✅ Trajectory export (CSV)
 - ✅ Trajectory visualization
 
 Currently Working On:
 
+- 🚧 Velocity smoothing
 - 🚧 More realistic traffic simulation
-- 🚧 Motion prediction concepts
-- 🚧 Perception system expansion
+- 🚧 Motion prediction refinement
 
 Future Goals:
 
-- ⬜ Kalman filtering
+- ⬜ Kalman filtering state estimation
 - ⬜ OpenCV integration
 - ⬜ Video-based detections
-- ⬜ Full perception pipeline
+- ⬜ End-to-end perception pipeline
 
 ---
 
@@ -261,6 +268,8 @@ Synthetic Traffic Generator
 Frame Files
           ↓
 Frame Loader
+          ↓
+Motion Prediction
           ↓
 Tracking System
           ↓

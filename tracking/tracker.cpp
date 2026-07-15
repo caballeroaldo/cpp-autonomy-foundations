@@ -45,3 +45,10 @@ int findBestUnusedTrackIndex(Node* root, const Point& query, const std::vector<b
     KDItem nearest = nearestNeighbor(root, query, trackUsed);
     return nearest.trackIndex;
 }
+
+Point predictPosition(const Track& track) {
+    return {
+        track.position.x + track.velocity.x,
+        track.position.y + track.velocity.y
+    };
+}

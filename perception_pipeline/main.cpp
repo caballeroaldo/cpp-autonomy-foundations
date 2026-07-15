@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <limits>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -38,7 +40,7 @@ int main(int argc, char** argv) {
     vector<string> frameFiles = getFrameFiles(frameFolder);
 
     if (frameFiles.empty()) {
-        cerr << "No frame files found in frames/\n";
+        cerr << "No frame files found in " << frameFolder << "\n";
         return 1;
     }
 
@@ -60,6 +62,7 @@ int main(int argc, char** argv) {
                 Track t;
                 t.id = nextTrackId++;
                 t.position = p;
+                t.velocity = {0,0};
                 t.missedFrames = 0;
                 t.history.push_back({frameNumber, p});
                 tracks.push_back(t);
@@ -72,7 +75,8 @@ int main(int argc, char** argv) {
 
         vector<KDItem> items;
         for (int i = 0; i < static_cast<int>(tracks.size()); i++) {
-            items.push_back({tracks[i].position, i});
+            Point predicted = predictPosition(tracks[i]);
+            items.push_back({predicted, i});
         }
 
         Node* root = buildKDTree(items);
@@ -85,13 +89,27 @@ int main(int argc, char** argv) {
             if (root != nullptr && !tracks.empty()) {
                 bestTrackIndex = findBestUnusedTrackIndex(root, p, trackUsed);
                 if (bestTrackIndex != -1) {
-                    minDist = squaredDistance(p, tracks[bestTrackIndex].position);
+                    Point predicted = predictPosition(tracks[bestTrackIndex]);
+                    minDist = squaredDistance(p, predicted);
                 }
             }
 
             if (bestTrackIndex != -1 &&
                 !trackUsed[bestTrackIndex] &&
                 minDist < distanceThreshold) {
+
+                Point oldPosition = tracks[bestTrackIndex].position;
+
+                Point measuredVelocity = {
+                    p.x - oldPosition.x,
+                    p.y - oldPosition.y
+
+                };
+
+                tracks[bestTrackIndex].velocity = {
+                    0.7 * tracks[bestTrackIndex].velocity.x + 0.3 * measuredVelocity.x,
+                    0.7 * tracks[bestTrackIndex].velocity.y + 0.3 * measuredVelocity.y
+                };
 
                 tracks[bestTrackIndex].position = p;
                 tracks[bestTrackIndex].missedFrames = 0;
@@ -103,6 +121,7 @@ int main(int argc, char** argv) {
                 Track newTrack;
                 newTrack.id = nextTrackId++;
                 newTrack.position = p;
+                newTrack.velocity = {0,0};
                 newTrack.missedFrames = 0;
                 newTrack.history.push_back({frameNumber, p});
 
