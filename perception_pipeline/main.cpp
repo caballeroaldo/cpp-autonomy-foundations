@@ -33,8 +33,7 @@ int main(int argc, char** argv) {
     vector<Track> tracks;
     int nextTrackId = 0;
 
-    const double distanceThreshold = 1000;
-    const int maxMissedFrames = 3;
+    TrackerConfig config;
 
     string frameFolder = (argc > 1) ? argv[1] : "frames";
     vector<string> frameFiles = getFrameFiles(frameFolder);
@@ -96,34 +95,15 @@ int main(int argc, char** argv) {
 
             if (bestTrackIndex != -1 &&
                 !trackUsed[bestTrackIndex] &&
-                minDist < distanceThreshold) {
+                minDist < config.maxAssociationDistanceSquared) {
 
-                Point oldPosition = tracks[bestTrackIndex].position;
-
-                Point measuredVelocity = {
-                    p.x - oldPosition.x,
-                    p.y - oldPosition.y
-
-                };
-
-                tracks[bestTrackIndex].velocity = {
-                    0.7 * tracks[bestTrackIndex].velocity.x + 0.3 * measuredVelocity.x,
-                    0.7 * tracks[bestTrackIndex].velocity.y + 0.3 * measuredVelocity.y
-                };
-
-                tracks[bestTrackIndex].position = p;
-                tracks[bestTrackIndex].missedFrames = 0;
-                tracks[bestTrackIndex].history.push_back({frameNumber, p});
+                updateTrack(tracks[bestTrackIndex], p, frameNumber, config);
+                
                 trackUsed[bestTrackIndex] = true;
 
                 printMatchResult(p, tracks[bestTrackIndex].id);
             } else {
-                Track newTrack;
-                newTrack.id = nextTrackId++;
-                newTrack.position = p;
-                newTrack.velocity = {0,0};
-                newTrack.missedFrames = 0;
-                newTrack.history.push_back({frameNumber, p});
+                Track newTrack = createTrack(nextTrackId++, p, frameNumber);
 
                 tracks.push_back(newTrack);
                 trackUsed.push_back(true);
@@ -143,7 +123,7 @@ int main(int argc, char** argv) {
         }
 
         for (int i = static_cast<int>(tracks.size()) - 1; i >= 0; i--) {
-            if (tracks[i].missedFrames > maxMissedFrames) {
+            if (tracks[i].missedFrames > config.maxMissedFrames) {
                 cout << "Deleting track " << tracks[i].id << " due to inactivity.\n";
                 tracks.erase(tracks.begin() + i);
             }

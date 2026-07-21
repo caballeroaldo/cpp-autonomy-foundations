@@ -52,3 +52,37 @@ Point predictPosition(const Track& track) {
         track.position.y + track.velocity.y
     };
 }
+
+Track createTrack(int trackId, const Point& position, int frameNumber) {
+    Track track;
+
+    track.id = trackId;
+    track.position = position;
+    track.velocity = {0,0};
+    track.missedFrames = 0;
+
+    track.history.push_back({frameNumber, position});
+
+    return track;
+}
+
+void updateTrack(Track& track, const Point& detection, int frameNumber, const TrackerConfig& config) {
+    Point measuredVelocity = {
+        detection.x - track.position.x,
+        detection.y - track.position.y
+
+    };
+
+    double smoothing = config.velocitySmoothing;
+    double measurementWeight = 1.0 - smoothing;
+
+    track.velocity = {
+        smoothing * track.velocity.x + measurementWeight * measuredVelocity.x,
+        smoothing * track.velocity.y + measurementWeight * measuredVelocity.y
+    };
+
+    track.position = detection;
+    track.missedFrames = 0;
+
+    track.history.push_back({frameNumber,detection});
+}
