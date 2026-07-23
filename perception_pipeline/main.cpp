@@ -1,12 +1,15 @@
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <iostream>
 #include <vector>
 #include <string>
 #include <filesystem>
 #include "../tracking/tracker.hpp"
+#include "../tracking/metrics.hpp"
 #include "frame_loader.hpp"
 #include "trajectory_export.hpp"
+#include "frame_export.hpp"
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -34,6 +37,12 @@ int main(int argc, char** argv) {
     int nextTrackId = 0;
 
     TrackerConfig config;
+    TrackerMetrics metrics;
+    std::vector<FrameRecord> frameRecords;
+
+    // Experimentation configuration
+    config.velocitySmoothing = 0.0;
+    // -----------------------------
 
     string frameFolder = (argc > 1) ? argv[1] : "frames";
     vector<string> frameFiles = getFrameFiles(frameFolder);
@@ -61,10 +70,12 @@ int main(int argc, char** argv) {
                 Track t;
                 t.id = nextTrackId++;
                 t.position = p;
+                t.predictedPosition = p;
                 t.velocity = {0,0};
                 t.missedFrames = 0;
                 t.history.push_back({frameNumber, p});
                 tracks.push_back(t);
+                metrics.tracksCreated++;
             }
 
             cout << "Initialized tracks from " << filename << "\n";
@@ -74,8 +85,8 @@ int main(int argc, char** argv) {
 
         vector<KDItem> items;
         for (int i = 0; i < static_cast<int>(tracks.size()); i++) {
-            Point predicted = predictPosition(tracks[i]);
-            items.push_back({predicted, i});
+            tracks[i].predictedPosition = predictPosition(tracks[i]);
+            items.push_back({tracks[i].predictedPosition, i});
         }
 
         Node* root = buildKDTree(items);
@@ -84,11 +95,12 @@ int main(int argc, char** argv) {
         for (const Point& p : currentFrame) {
             double minDist = numeric_limits<double>::max();
             int bestTrackIndex = -1;
+            Point predicted;
 
             if (root != nullptr && !tracks.empty()) {
                 bestTrackIndex = findBestUnusedTrackIndex(root, p, trackUsed);
                 if (bestTrackIndex != -1) {
-                    Point predicted = predictPosition(tracks[bestTrackIndex]);
+                    predicted = tracks[bestTrackIndex].predictedPosition;
                     minDist = squaredDistance(p, predicted);
                 }
             }
@@ -97,15 +109,32 @@ int main(int argc, char** argv) {
                 !trackUsed[bestTrackIndex] &&
                 minDist < config.maxAssociationDistanceSquared) {
 
-                updateTrack(tracks[bestTrackIndex], p, frameNumber, config);
+                double predictionError = std::sqrt(squaredDistance(predicted,p));
+                metrics.totalPredictionError += predictionError;
+                metrics.predictionSamples++;
+                metrics.maxPredictionError = std::max(metrics.maxPredictionError, predictionError);
+
+                updateTrack(tracks[bestTrackIndex], p, predicted, predictionError, frameNumber, config);
                 
+                FrameRecord record;
+                record.frameNumber = frameNumber;
+                record.trackId = tracks[bestTrackIndex].id;
+                record.predictedPosition = predicted;
+                record.position = tracks[bestTrackIndex].position;
+                record.velocity = tracks[bestTrackIndex].velocity;
+                record.predictionError = predictionError;
+                frameRecords.push_back(record);
+
+                metrics.successfulAssociations++;
                 trackUsed[bestTrackIndex] = true;
 
                 printMatchResult(p, tracks[bestTrackIndex].id);
             } else {
+                metrics.missedAssociations++;
                 Track newTrack = createTrack(nextTrackId++, p, frameNumber);
 
                 tracks.push_back(newTrack);
+                metrics.tracksCreated++;
                 trackUsed.push_back(true);
 
                 printNewTrackResult(p, newTrack.id);
@@ -125,6 +154,7 @@ int main(int argc, char** argv) {
         for (int i = static_cast<int>(tracks.size()) - 1; i >= 0; i--) {
             if (tracks[i].missedFrames > config.maxMissedFrames) {
                 cout << "Deleting track " << tracks[i].id << " due to inactivity.\n";
+                metrics.tracksDeleted++;
                 tracks.erase(tracks.begin() + i);
             }
         }
@@ -145,8 +175,10 @@ int main(int argc, char** argv) {
     for (const Track& t: tracks) {
         printTrackHistory(t);
     }
+    printTrackerMetrics(metrics);
 
     exportTrackHistories(tracks, "output");
+    exportFrameData(frameRecords, "output/frame_data.csv");
 
     return 0;
 }

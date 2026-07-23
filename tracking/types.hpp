@@ -10,11 +10,15 @@ struct Point {
 struct Observation {
     int frameNumber;
     Point position;
+    Point predictedPosition;
+    double predictionError = 0.0;
+    
 };
 
 struct Track {
     int id;
     Point position;
+    Point predictedPosition;
     Point velocity;
     int missedFrames;
     std::vector<Observation> history;

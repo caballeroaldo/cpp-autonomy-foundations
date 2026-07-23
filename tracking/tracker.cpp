@@ -58,6 +58,7 @@ Track createTrack(int trackId, const Point& position, int frameNumber) {
 
     track.id = trackId;
     track.position = position;
+    track.predictedPosition = position;
     track.velocity = {0,0};
     track.missedFrames = 0;
 
@@ -66,7 +67,8 @@ Track createTrack(int trackId, const Point& position, int frameNumber) {
     return track;
 }
 
-void updateTrack(Track& track, const Point& detection, int frameNumber, const TrackerConfig& config) {
+void updateTrack(Track& track, const Point& detection, const Point& predictedPosition, 
+                double predictionError, int frameNumber, const TrackerConfig& config) {
     Point measuredVelocity = {
         detection.x - track.position.x,
         detection.y - track.position.y
@@ -84,5 +86,13 @@ void updateTrack(Track& track, const Point& detection, int frameNumber, const Tr
     track.position = detection;
     track.missedFrames = 0;
 
-    track.history.push_back({frameNumber,detection});
+    // Observation Recording
+    Observation observation;
+
+    observation.frameNumber = frameNumber;
+    observation.position = detection;
+    observation.predictedPosition = predictedPosition;
+    observation.predictionError = predictionError;
+
+    track.history.push_back(observation);
 }

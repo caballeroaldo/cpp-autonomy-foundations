@@ -2,7 +2,9 @@
 
 This repository contains my C++ projects and systems-focused engineering work as I build toward developing software for autonomous driving, perception, robotics, and real-time systems.
 
-This repository follows a milestone-based development approach, where each project builds upon the previous one to gradually construct the foundations of an autonomous perception stack. Rather than relying on existing perception frameworks, each component is implemented from first principles to develop a deeper understanding of the underlying algorithms and system architecture.
+This repository follows a milestone-based development approach where each project builds upon the previous one to gradually construct the foundations of an autonomous perception stack.
+
+Rather than relying on existing perception frameworks, each component is implemented from first principles to develop a deeper understanding of the algorithms, data structures, software architecture, and evaluation techniques used in modern perception systems.
 
 The goal of this repository is to strengthen:
 
@@ -11,6 +13,18 @@ The goal of this repository is to strengthen:
 - Systems thinking
 - Spatial reasoning and tracking
 - Foundations for perception pipelines
+
+---
+
+## Highlights
+
+- Modular C++ multi-object tracking system
+- KD-tree accelerated data association
+- Constant-velocity motion prediction
+- Synthetic benchmark generation
+- Quantitative prediction error evaluation
+- Trajectory visualization
+- Tracker debugging visualization
 
 ---
 
@@ -74,7 +88,7 @@ Projects focused on object tracking and state management across frames.
 
 A modular C++ tracking system that maintains object identities across sequential frames using:
 
-- KD-tree accelerated nearest-neighbor matching
+- KD-tree accelerated data association
 - Frame-aware observations
 - Persistent track identities
 - Trajectory history
@@ -101,11 +115,16 @@ Projects focused on moving from manually entered detections toward perception-st
 
 - File-based frame ingestion
 - Automatic frame discovery
-- Detection-to-tracker integration
+- KD-tree accelerated data association
 - Constant-velocity motion prediction
+- Configurable tracker parameters
+- Prediction error evaluation
 - Synthetic traffic generation
+- Benchmark datasets
 - Trajectory export (CSV)
-- Python trajectory visualization
+- Frame state export (CSV)
+- Trajectory visualization
+- Tracker debug visualization
 
 ### Pipeline Architecture
 
@@ -118,21 +137,33 @@ Frame Loader
           ↓
 Motion Prediction
           ↓
-KD-Tree Matching
+KD-Tree Association
           ↓
-Tracker
+Tracker Update
           ↓
-Trajectory Export
+Evaluation Metrics
           ↓
-Trajectory Visualization
+      ┌───────────────┐
+      │               │
+Trajectory Export   Frame Export
+      │               │
+      ▼               ▼
+Trajectory Plot   Tracker Debug View
 ```
 
-### Example Visualization
+### Trajectory Visualization
 
-Synthetic traffic tracking scenario generated using the perception pipeline
-![Synthetic Traffic Tracking Demo](perception_pipeline/output/trajectory_plot.png)
+![Trajectory Plot](perception_pipeline/output/trajectory_plot.png)
 
-Each colored trajectory represents a tracked object. Frame labels indicate temporal progression and demonstrate persistent object identity across sequential observations.
+Shows the complete tracked trajectory of every object throughout the scenario.
+
+---
+
+### Tracker Debug Visualization
+
+![Tracker Debug View](perception_pipeline/output/tracker_frame_10.png)
+
+Shows the internal state of the tracker for a single frame, including predicted positions, corrected positions, association errors, velocity estimates, and persistent track identities.
 
 ---
 
@@ -213,48 +244,48 @@ clang++ -std=c++17 -Wall -Wextra Basics/calculator.cpp -o calculator
 ### Completed
 
 - File-based detection ingestion
-- Automatic frame discovery
-- Detection-to-tracking integration
+- KD-tree accelerated data association
 - Constant-velocity motion prediction
+- Configurable tracker parameters
+- Prediction error evaluation
 - Synthetic traffic generation
-- Trajectory export (CSV)
+- Benchmark datasets
 - Trajectory visualization
+- Tracker debug visualization
 
-### Next Steps
+### Next Milestone
 
-- Velocity smoothing
-- Kalman filter state estimation
-- OpenCV integration
-- Video-based detections
+- Constant-velocity Kalman filter
+- Curved-motion benchmark datasets
+- False detections and missed detections
+- Animated tracker visualization
 
 ---
 
 # 🏁 Current Milestone
 
-Completed:
+Completed
 
-- ✅ KD-Tree implementation
-- ✅ Multi-frame object tracking
-- ✅ KD-tree accelerated matching
-- ✅ Modular tracker architecture
-- ✅ Perception pipeline foundations
-- ✅ Constant-velocity motion prediction
-- ✅ Synthetic traffic generation
-- ✅ Trajectory export (CSV)
+- ✅ KD-tree implementation
+- ✅ Multi-frame tracking
+- ✅ Constant-velocity prediction
+- ✅ Benchmark generation
+- ✅ Prediction error evaluation
 - ✅ Trajectory visualization
+- ✅ Tracker debug visualization
 
-Currently Working On:
+Currently Working On
 
-- 🚧 Velocity smoothing
-- 🚧 More realistic traffic simulation
-- 🚧 Motion prediction refinement
+- 🚧 Constant-velocity Kalman filter
 
-Future Goals:
+Future Goals
 
-- ⬜ Kalman filtering state estimation
+- ⬜ Hungarian assignment
+- ⬜ Curved-motion benchmark datasets
+- ⬜ False detections
+- ⬜ Animated tracker visualization
 - ⬜ OpenCV integration
-- ⬜ Video-based detections
-- ⬜ End-to-end perception pipeline
+- ⬜ Video-based perception
 
 ---
 
@@ -271,9 +302,11 @@ Frame Loader
           ↓
 Motion Prediction
           ↓
-Tracking System
+KD-Tree Association
           ↓
-Trajectory Export
+Tracking Update
+          ↓
+Evaluation
           ↓
 Visualization
 ```

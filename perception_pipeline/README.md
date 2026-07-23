@@ -1,10 +1,17 @@
 # Perception Pipeline Foundations (C++)
 
-This project is the next step after the multi-frame object tracker. It begins to separate detection input from tracking logic by loading detections from files instead of relying on terminal input.
+This project implements a modular C++ perception pipeline for multi-object tracking. It builds on the standalone tracking library by integrating file-based detection ingestion, motion prediction, benchmark generation, quantitative evaluation, and visualization into a cohesive perception workflow.
 
-The goal of this phase is to build the foundations of a perception-style pipeline that can eventually support simulation input, visualization, and real detection sources.
+The project demonstrates how detections flow through a perception pipeline:
 
-This project is part of a larger roadmap toward perception software engineering for autonomous driving, with each phase introducing progressively more realistic tracking, prediction, and pipeline architecture concepts.
+Frame Detections
+→ Motion Prediction
+→ KD-Tree Data Association
+→ Track Update
+→ Evaluation
+→ Visualization
+
+Rather than focusing solely on tracking accuracy, the project emphasizes modular software architecture, reproducible benchmarking, and debugging tools commonly used in autonomous perception systems.
 
 ---
 
@@ -16,7 +23,9 @@ The purpose of this project is to move from manual point entry to a more realist
 2. Pass detections into the tracker
 3. Maintain object identities across frames
 4. Track trajectories over time
-5. Prepare the codebase for future perception and visualization work
+5. Evaluate tracking performance using quantitative metrics
+6. Export trackings tate for visualization and debugging
+7. Build a modular architecture suitable for future Kalman filtering and senor integration
 
 This phase bridges the gap between a terminal-based tracker and a more complete perception system.
 
@@ -27,14 +36,17 @@ This phase bridges the gap between a terminal-based tracker and a more complete 
 - File-based frame loading
 - Automatic frame discovery
 - Synthetic traffic generation
-- KD-tree accelerated nearest-neighbor matching
+- KD-tree accelerated nearest-neighbor association
 - Constant-velocity motion prediction
+- Configurable tracking parameters
+- Prediction error evaluation
 - Persistent track identities
-- Frame-aware trajectory history
 - Missed-frame handling
 - Stale-track deletion
-- Trajectory export to CSV
-- Python-based trajectory visualization
+- Trajectory export (CSV)
+- Frame state export (CSV)
+- Trajectory visualization
+- Tracker debug visualization
 
 ---
 
@@ -51,12 +63,16 @@ perception-pipeline/
 ├── output/
 │   ├── track_0.csv
 │   ├── track_1.csv
+│   ├── frame_data.csv
+│   ├── tracker_frame_10.png
 │   └── trajectory_plot.png
 │
 ├── frame_loader.hpp
 ├── frame_loader.cpp
 ├── trajectory_export.hpp
 ├── trajectory_export.cpp
+├── frame_export.hpp
+├── frame_export.cpp
 ├── generate_traffic_frames.py
 ├── visualize_tracks.py
 ├── main.cpp
@@ -70,6 +86,10 @@ perception-pipeline/
 ## `frame_loader.hpp / frame_loader.cpp`
 
 Handles reading detection points from text files and converting them into `Point` objects.
+
+## `frame_export.hpp / frame_export.cpp`
+
+Exports tracker state for every successful association, including predicted positions, corrected positions, velocity estimates, and prediction errors. This data powers the tracker debug visualization.
 
 ## `main.cpp`
 
@@ -147,17 +167,20 @@ Frame Files
           ↓
 Frame Loader
           ↓
-Detection List
-          ↓
 Motion Prediction
           ↓
-KD-Tree Matching
+KD-Tree Association
           ↓
-Tracker Update
+Track Update
           ↓
-Trajectory Export (CSV)
+Evaluation Metrics
           ↓
-Trajectory Visualization
+      ┌───────────────┐
+      │               │
+Trajectory Export   Frame Export
+      │               │
+      ▼               ▼
+Trajectory Plot   Tracker Debug View
 ```
 
 This structure separates detection input from tracking logic, which is an important step toward perception systems.
@@ -176,6 +199,8 @@ Each successful track update performs the following steps:
 4. Build the KD-tree using predicted positions rather than the previous observations.
 
 Searching around predicted positions instead of previous positions improves robustness for consistently moving objects and serves as a conceptual foundation for future Kalman filter integration.
+
+Prediction accuracy is evaluated by measuring the Euclidean distance between the predicted position and the matched detection before each track update. Aggregate statistics are reported at the end of every run, allowing different prediction strategies to be compared objectively.
 
 ---
 
@@ -268,6 +293,42 @@ Each colored trajectory represents a tracked object.
 
 Frame labels (`F1`, `F2`, etc.) indicate temporal progression and demonstrate persistent object identity across frames.
 
+# Tracker Debug Visualization
+
+The tracker exports frame-level debugging information that can be visualized independently of the trajectory plots.
+
+The visualization displays:
+
+- Predicted positions (×)
+- Corrected track positions (●)
+- Association lines
+- Estimated velocity vectors
+- Track identities
+
+Example Output: 
+
+![KD-Tree Tracker Debug View](output/tracker_frame_10.png)
+
+---
+
+# Benchmarking
+
+The pipeline includes configurable synthetic datasets for evaluating prediction performance.
+
+Current datasets include:
+
+- Clean detections
+- Noisy detections
+
+Prediction quality is evaluated using:
+
+- Average prediction error
+- Maximum prediction error
+- Successful associations
+- Missed associations
+
+These benchmarks provide a baseline for evaluating future motion models such as Kalman filtering.
+
 ---
 
 # Why This Phase Matters
@@ -291,7 +352,7 @@ Known limitations:
 
 - Frame data comes from synthetic detections rather than real sensors
 - Matching is still greedy and not globally optimal
-- uses a simple contant-velocity prediction model rather than probabilistic state estimation
+- Uses a constant-velocity prediction model with exponential velocity smoothing
 - No image or video processing yet
 - No OpenCV integration yet
 - No Hungarian assignment optimization
@@ -302,14 +363,13 @@ Known limitations:
 
 Planned next steps include:
 
-- More realistic traffic simulation scenarios
-- Hungarian algorithm assignment
-- Velocity smoothing using exponential moving averages
-- Kalman filter state estimation
+- Constant-velocity Kalman filter
+- Curved-motion benchmark scenarios
+- False detections and missed detections
+- Animated tracker visualization
+- Hungarian assignment
 - OpenCV-based visualization
-- Video-based detections
 - Real sensor integration
-- End-to-end perception pipeline development
 
 ---
 
@@ -338,26 +398,24 @@ Together, they form the foundation for a future perception-style application.
 
 # Development Progress
 
-Completed:
-
+Completed
 - ✅ File-based detection ingestion
-- ✅ Automatic frame discovery
-- ✅ KD-tree accelerated tracking
+- ✅ KD-tree accelerated association
 - ✅ Constant-velocity motion prediction
-- ✅ Trajectory export (CSV)
+- ✅ Configurable tracker parameters
+- ✅ Prediction error evaluation
 - ✅ Synthetic traffic generation
-- ✅ Python Trajectory visualization
+- ✅ Benchmark datasets
+- ✅ Trajectory visualization
+- ✅ Tracker debug visualization
 
-In Progress:
+In Progress
+- 🚧 Kalman filter integration
 
-- 🚧 Velocity smoothing
-- 🚧 More realistic traffic simulation
-- 🚧 Motion Prediction refinement
-
-Planned:
-
-- ⬜ Kalman filter state estimation
-- ⬜ Hungarian algorithm assignment
+Planned
+- ⬜ Hungarian assignment
+- ⬜ Curved-motion benchmarks
+- ⬜ False detections
+- ⬜ Animated visualization
 - ⬜ Video-based perception
 - ⬜ OpenCV integration
-- ⬜ End-to-End perception pipeline

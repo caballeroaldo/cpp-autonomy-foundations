@@ -17,9 +17,22 @@ class Trajectory:
     y_fn: Callable[[int], float]
 
 
-def jitter(name: str, frame: int, amplitude: int = 1) -> Tuple[int, int]:
+def add_measurement_noise(
+    name: str,
+    frame: int,
+    noise_std: float = 0.0
+) -> Tuple[float, float]:
+    '''
+    Adds deterministic Gaussian measurement noise.
+
+    The random generator is seeded using the trajectory name and frame number so that 
+    every experiment is perfectly repeatable
+    '''
     rng = random.Random(f"{name}:{frame}")
-    return rng.randint(-amplitude, amplitude), rng.randint(-amplitude, amplitude)
+
+    noise_x = rng.gauss(0.0, noise_std)
+    noise_y = rng.gauss(0.0, noise_std)
+    return noise_x, noise_y
 
 
 # A more intersection-like synthetic traffic scene
@@ -75,7 +88,7 @@ TRAJECTORIES: List[Trajectory] = [
 ]
 
 
-def generate_points_for_frame(frame: int) -> List[Tuple[int, int]]:
+def generate_points_for_frame(frame: int, noise_std: float) -> List[Tuple[int, int]]:
     points: List[Tuple[int, int]] = []
 
     for traj in TRAJECTORIES:
@@ -83,7 +96,7 @@ def generate_points_for_frame(frame: int) -> List[Tuple[int, int]]:
             local_t = frame - traj.start_frame
             x = traj.x_fn(local_t)
             y = traj.y_fn(local_t)
-            jx, jy = jitter(traj.name, frame, amplitude=1)
+            jx, jy = add_measurement_noise(traj.name,frame,noise_std)
             points.append((int(round(x + jx)), int(round(y + jy))))
 
     # Stable output order
@@ -106,6 +119,12 @@ def main() -> int:
         help="Number of frames to generate",
     )
     parser.add_argument(
+        "--noise",
+        type=float,
+        default=0.0,
+        help="Standard deviation of Gaussian measurement noise (pixels)"
+    )
+    parser.add_argument(
         "--clear",
         action="store_true",
         help="Clear existing frame_*.txt files in the output directory first",
@@ -121,7 +140,7 @@ def main() -> int:
             old_file.unlink()
 
     for frame in range(1, args.frames + 1):
-        points = generate_points_for_frame(frame)
+        points = generate_points_for_frame(frame,args.noise)
         out_path = output_dir / f"frame_{frame:02d}.txt"
 
         with out_path.open("w", encoding="utf-8") as f:
