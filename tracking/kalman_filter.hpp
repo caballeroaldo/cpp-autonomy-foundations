@@ -2,14 +2,8 @@
 #define KALMAN_FILTER_HPP
 
 #include "types.hpp"
+#include <Eigen/Dense>
 
-struct State {
-    double x = 0.0;
-    double y = 0.0;
-
-    double vx = 0.0;
-    double vy = 0.0;
-};
 
 class KalmanFilter {
     public:
@@ -26,8 +20,10 @@ class KalmanFilter {
         Point velocity() const;
     
     private:
-        State state_;
+        Eigen::Vector4d state_;
         bool isInitialized_;
+
+        Eigen::Matrix4d transitionMatrix(double dt) const;
 };
 
 #endif

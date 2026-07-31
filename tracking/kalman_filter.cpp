@@ -7,40 +7,48 @@ KalmanFilter::KalmanFilter():
 }
 
 void KalmanFilter::initialize(const Point& initialPosition) {
-    state_.x = initialPosition.x;
-    state_.y = initialPosition.y;
-
-    state_.vx = 0.0;
-    state_.vy = 0.0;
+    state_ << 
+        initialPosition.x,
+        initialPosition.y,
+        0.0,
+        0.0;
 
     isInitialized_ = true;
 }
 
 void KalmanFilter::predict(double dt) {
-    if (!isInitialized_) {
+    if (!isInitialized_ || dt <= 0.0) {
         return;
     }
 
-    state_.x += state_.vx * dt;
-    state_.y += state_.vy * dt;
+    state_ = transitionMatrix(dt) * state_;
 }
 
 void KalmanFilter::update(const Point& measurement, double dt) {
-    if (!isInitialized_) {
+    if (!isInitialized_ || dt <= 0.0) {
         return;
     }
 
-    state_.vx = (measurement.x - state_.x) / dt;
-    state_.vy = (measurement.y - state_.y) / dt;
+    state_(2) = (measurement.x - state_(0)) / dt;
+    state_(3) = (measurement.y - state_(1)) / dt;
 
-    state_.x = measurement.x;
-    state_.y = measurement.y;
+    state_(0) = measurement.x;
+    state_(1) = measurement.y;
 }
 
 Point KalmanFilter::position() const {
-    return Point{state_.x,state_.y};
+    return Point{state_(0),state_(1)};
 }
 
 Point KalmanFilter::velocity() const {
-    return Point{state_.vx, state_.vy};
+    return Point{state_(2), state_(3)};
+}
+
+Eigen::Matrix4d KalmanFilter::transitionMatrix(double dt) const {
+    Eigen::Matrix4d F = Eigen::Matrix4d::Identity();
+
+    F(0,2) = dt;
+    F(1,3) = dt;
+
+    return F;
 }
