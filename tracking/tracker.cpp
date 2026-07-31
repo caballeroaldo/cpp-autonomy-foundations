@@ -67,30 +67,18 @@ Track createTrack(int trackId, const Point& position, int frameNumber) {
     return track;
 }
 
-void updateTrack(Track& track, const Point& detection, const Point& predictedPosition, 
-                double predictionError, int frameNumber, const TrackerConfig& config) {
-    Point measuredVelocity = {
-        detection.x - track.position.x,
-        detection.y - track.position.y
-
-    };
-
-    double smoothing = config.velocitySmoothing;
-    double measurementWeight = 1.0 - smoothing;
-
-    track.velocity = {
-        smoothing * track.velocity.x + measurementWeight * measuredVelocity.x,
-        smoothing * track.velocity.y + measurementWeight * measuredVelocity.y
-    };
-
-    track.position = detection;
+void recordTrackObservation(Track& track, const Point& correctedPosition, const Point& correctedVelocity, const Point& predictedPosition, 
+                double predictionError, int frameNumber) {
+    
+    track.position = correctedPosition;
+    track.velocity = correctedVelocity;
     track.missedFrames = 0;
 
     // Observation Recording
     Observation observation;
 
     observation.frameNumber = frameNumber;
-    observation.position = detection;
+    observation.position = correctedPosition;
     observation.predictedPosition = predictedPosition;
     observation.predictionError = predictionError;
 

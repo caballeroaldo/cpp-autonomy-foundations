@@ -5,14 +5,21 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+
 #include "../tracking/tracker.hpp"
 #include "../tracking/metrics.hpp"
+#include "../tracking/kalman_filter.hpp"
 #include "frame_loader.hpp"
 #include "trajectory_export.hpp"
 #include "frame_export.hpp"
 
 using namespace std;
 namespace fs = std::filesystem;
+
+struct ActiveTrack {
+    Track track;
+    KalmanFilter filter;
+};
 
 vector<string> getFrameFiles(const string& folderPath) {
     vector<string> files;
@@ -33,7 +40,7 @@ vector<string> getFrameFiles(const string& folderPath) {
 }
 
 int main(int argc, char** argv) {
-    vector<Track> tracks;
+    vector<ActiveTrack> activeTracks;
     int nextTrackId = 0;
 
     TrackerConfig config;
@@ -65,16 +72,19 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        if (tracks.empty()) {
+        if (activeTracks.empty()) {
             for (const Point& p : currentFrame) {
-                Track t;
-                t.id = nextTrackId++;
-                t.position = p;
-                t.predictedPosition = p;
-                t.velocity = {0,0};
-                t.missedFrames = 0;
-                t.history.push_back({frameNumber, p});
-                tracks.push_back(t);
+                ActiveTrack activeTrack;
+                activeTrack.track.id = nextTrackId++;
+                activeTrack.track.position = p;
+                activeTrack.track.predictedPosition = p;
+                activeTrack.track.velocity = {0,0};
+                activeTrack.track.missedFrames = 0;
+                activeTrack.track.history.push_back({frameNumber, p});
+                
+                activeTrack.filter.initialize(p);
+                activeTracks.push_back(activeTrack);
+                
                 metrics.tracksCreated++;
             }
 
@@ -84,23 +94,24 @@ int main(int argc, char** argv) {
         }
 
         vector<KDItem> items;
-        for (int i = 0; i < static_cast<int>(tracks.size()); i++) {
-            tracks[i].predictedPosition = predictPosition(tracks[i]);
-            items.push_back({tracks[i].predictedPosition, i});
+        for (int i = 0; i < static_cast<int>(activeTracks.size()); i++) {
+            activeTracks[i].filter.predict();
+            activeTracks[i].track.predictedPosition = activeTracks[i].filter.position();
+            items.push_back({activeTracks[i].track.predictedPosition, i});
         }
 
         Node* root = buildKDTree(items);
-        vector<bool> trackUsed(tracks.size(), false);
+        vector<bool> trackUsed(activeTracks.size(), false);
 
         for (const Point& p : currentFrame) {
             double minDist = numeric_limits<double>::max();
             int bestTrackIndex = -1;
             Point predicted;
 
-            if (root != nullptr && !tracks.empty()) {
+            if (root != nullptr && !activeTracks.empty()) {
                 bestTrackIndex = findBestUnusedTrackIndex(root, p, trackUsed);
                 if (bestTrackIndex != -1) {
-                    predicted = tracks[bestTrackIndex].predictedPosition;
+                    predicted = activeTracks[bestTrackIndex].track.predictedPosition;
                     minDist = squaredDistance(p, predicted);
                 }
             }
@@ -114,54 +125,62 @@ int main(int argc, char** argv) {
                 metrics.predictionSamples++;
                 metrics.maxPredictionError = std::max(metrics.maxPredictionError, predictionError);
 
-                updateTrack(tracks[bestTrackIndex], p, predicted, predictionError, frameNumber, config);
+                activeTracks[bestTrackIndex].filter.update(p);
+                Point correctedPosition = activeTracks[bestTrackIndex].filter.position();
+                Point correctedVelocity = activeTracks[bestTrackIndex].filter.velocity();
+                // DEBUG activeTracks[bestTrackIndex].filter.printCorrection();
+
+                recordTrackObservation(activeTracks[bestTrackIndex].track, correctedPosition, correctedVelocity, predicted, predictionError, frameNumber);
                 
                 FrameRecord record;
                 record.frameNumber = frameNumber;
-                record.trackId = tracks[bestTrackIndex].id;
+                record.trackId = activeTracks[bestTrackIndex].track.id;
                 record.predictedPosition = predicted;
-                record.position = tracks[bestTrackIndex].position;
-                record.velocity = tracks[bestTrackIndex].velocity;
+                record.position = activeTracks[bestTrackIndex].track.position;
+                record.velocity = activeTracks[bestTrackIndex].track.velocity;
                 record.predictionError = predictionError;
                 frameRecords.push_back(record);
 
                 metrics.successfulAssociations++;
                 trackUsed[bestTrackIndex] = true;
 
-                printMatchResult(p, tracks[bestTrackIndex].id);
+                printMatchResult(p, activeTracks[bestTrackIndex].track.id);
             } else {
                 metrics.missedAssociations++;
-                Track newTrack = createTrack(nextTrackId++, p, frameNumber);
+                ActiveTrack activeTrack;
+                activeTrack.track = createTrack(nextTrackId++, p, frameNumber);
+                activeTrack.filter.initialize(p);
+                activeTracks.push_back(activeTrack);
 
-                tracks.push_back(newTrack);
+
                 metrics.tracksCreated++;
                 trackUsed.push_back(true);
 
-                printNewTrackResult(p, newTrack.id);
+                printNewTrackResult(p, activeTrack.track.id);
             }
         }
 
         deleteTree(root);
 
-        for (int i = 0; i < static_cast<int>(tracks.size()); i++) {
+        for (int i = 0; i < static_cast<int>(activeTracks.size()); i++) {
             if (!trackUsed[i]) {
-                tracks[i].missedFrames++;
+                activeTracks[i].track.missedFrames++;
             } else {
-                tracks[i].missedFrames = 0;
+                activeTracks[i].track.missedFrames = 0;
             }
         }
 
-        for (int i = static_cast<int>(tracks.size()) - 1; i >= 0; i--) {
-            if (tracks[i].missedFrames > config.maxMissedFrames) {
-                cout << "Deleting track " << tracks[i].id << " due to inactivity.\n";
+        for (int i = static_cast<int>(activeTracks.size()) - 1; i >= 0; i--) {
+            if (activeTracks[i].track.missedFrames > config.maxMissedFrames) {
+                cout << "Deleting track " << activeTracks[i].track.id << " due to inactivity.\n";
                 metrics.tracksDeleted++;
-                tracks.erase(tracks.begin() + i);
+                activeTracks.erase(activeTracks.begin() + i);
             }
         }
 
         cout << "\nCurrent tracks:\n";
-        for (const Track& t : tracks) {
-            printTrackHistory(t);
+        for (const ActiveTrack& activeTrack : activeTracks) {
+            printTrackHistory(activeTrack.track);
         }
 
         frameNumber++;
@@ -171,11 +190,16 @@ int main(int argc, char** argv) {
     cout << "Final Summary\n";
     cout << "====================================\n";
 
-    cout << "Total tracks remaining: " << tracks.size() << "\n";
-    for (const Track& t: tracks) {
-        printTrackHistory(t);
+    cout << "Total tracks remaining: " << activeTracks.size() << "\n";
+    for (const ActiveTrack& activeTrack: activeTracks) {
+        printTrackHistory(activeTrack.track);
     }
     printTrackerMetrics(metrics);
+
+    vector<Track> tracks;
+    for (const ActiveTrack& activeTrack : activeTracks) {
+        tracks.push_back(activeTrack.track);
+    }
 
     exportTrackHistories(tracks, "output");
     exportFrameData(frameRecords, "output/frame_data.csv");
