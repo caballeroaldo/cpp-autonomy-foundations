@@ -2,6 +2,7 @@
 #define TYPES_HPP
 #include <vector>
 
+
 struct Point {
     double x;
     double y;
