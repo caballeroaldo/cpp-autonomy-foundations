@@ -4,7 +4,7 @@ This project implements a modular C++ perception pipeline for multi-object track
 
 The project demonstrates how detections flow through a perception pipeline:
 
-Frame Detections
+→ Frame Detections
 → Motion Prediction
 → KD-Tree Data Association
 → Track Update
@@ -37,7 +37,9 @@ This phase bridges the gap between a terminal-based tracker and a more complete 
 - Automatic frame discovery
 - Synthetic traffic generation
 - KD-tree accelerated nearest-neighbor association
-- Constant-velocity motion prediction
+- Constant-velocity Kalman Filter state estimation
+- Tuned Kalman filter parameters
+- Standalone Kalman filter validation
 - Configurable tracking parameters
 - Prediction error evaluation
 - Persistent track identities
@@ -167,7 +169,7 @@ Frame Files
           ↓
 Frame Loader
           ↓
-Motion Prediction
+Kalman State Estimation
           ↓
 KD-Tree Association
           ↓
@@ -187,20 +189,18 @@ This structure separates detection input from tracking logic, which is an import
 
 ---
 
-# Motion Prediction
+# Kalman Filter State Estimation
 
-To improve track association across sequential frames, the tracker estimates a constant velocity for every active track.
+The tracker uses a constant-velocity Kalman filter to estimate each object's position and velocity over time.
 
-Each successful track update performs the following steps:
+Rather than directly updating tracks from incoming detections, the tracker follows a two-stage prediction/correction cycle:
 
-1. Compute the measured velocity using the previous and current object positions.
-2. Update the estimated track velocity.
-3. Predict the object's next position using a constant-velocity model.
-4. Build the KD-tree using predicted positions rather than the previous observations.
+1. Predict the next state using the constant-velocity motion model.
+2. Associate detections using KD-tree nearest-neighbor search.
+3. Correct the predicted state using the matched detection.
+4. Record the corrected state estimate in the track history.
 
-Searching around predicted positions instead of previous positions improves robustness for consistently moving objects and serves as a conceptual foundation for future Kalman filter integration.
-
-Prediction accuracy is evaluated by measuring the Euclidean distance between the predicted position and the matched detection before each track update. Aggregate statistics are reported at the end of every run, allowing different prediction strategies to be compared objectively.
+Unlike the previous deterministic predictor, the Kalman filter maintains both a state estimate and an uncertainty estimate (covariance), allowing the tracker to gradually improve its prediction accuracy as additional observations become available.
 
 ---
 
@@ -279,17 +279,17 @@ Track 2 [missed=0]
 
 Trajectory data is exported as CSV files and visualized using a Python plotting utility.
 
-Generate the visualization:
+Generate the visualization for tracker plot at a specific frame and saved to a specifc output directory:
 
 ```bash
-python3 visualize_tracks.py
+python3 visualize_tracks.py \ --tracker \ --frame 10 \ --output output
 ```
 
 Example output:
 
 ![Synthetic Traffic Tracking Demo](output/trajectory_plot.png)
 
-Each colored trajectory represents a tracked object.
+Each trajectory represents the Kalman Filter's corrected state estimate after incorporating each measurement. The resulting paths are smoother than the raw detections while preserving persistent object identities across frames.
 
 Frame labels (`F1`, `F2`, etc.) indicate temporal progression and demonstrate persistent object identity across frames.
 
@@ -331,6 +331,31 @@ These benchmarks provide a baseline for evaluating future motion models such as 
 
 ---
 
+# Kalman Filter Configuration
+
+The Kalman filter parameters were empirically tuned using the synthetic benchmark datasets.
+
+| Parameter | Value | Purpose |
+|-----------|------:|---------|
+| Initial Covariance (P₀) | 100 × I | High initial uncertainty allows rapid convergence during the first observations. |
+| Process Noise (Q) | 0.1 × I | Models uncertainty in the constant-velocity motion model. |
+| Measurement Noise (R) | 1.0 × I | Models uncertainty in the incoming detections. |
+
+These values significantly improved prediction accuracy compared to the untuned baseline while maintaining identical association performance.
+
+# Kalman Filter Evaluation
+
+The tuned Kalman filter was evaluated using the synthetic benchmark datasets developed for this project.
+
+| Configuration | Avg Prediction Error | Max Prediction Error | Successful Associations | Missed Associations |
+|---------------|--------------------:|---------------------:|-------------------------:|--------------------:|
+| Untuned Kalman Filter | 9.8859 | 24.4131 | 47 | 2 |
+| Tuned Kalman Filter | **4.5203** | **21.2603** | 47 | 2 |
+
+The tuned configuration reduced the average prediction error by approximately **54%** while preserving the same number of successful and missed associations.
+
+---
+
 # Why This Phase Matters
 
 This project is the first step toward a larger perception pipeline because it introduces:
@@ -352,7 +377,7 @@ Known limitations:
 
 - Frame data comes from synthetic detections rather than real sensors
 - Matching is still greedy and not globally optimal
-- Uses a constant-velocity prediction model with exponential velocity smoothing
+- Uses a constant-velocity Kalman filter that assumes linear motion between observations
 - No image or video processing yet
 - No OpenCV integration yet
 - No Hungarian assignment optimization
@@ -363,12 +388,23 @@ Known limitations:
 
 Planned next steps include:
 
-- Constant-velocity Kalman filter
-- Curved-motion benchmark scenarios
-- False detections and missed detections
-- Animated tracker visualization
+Motion Models
+- Adaptive process and measurement noise
+- Constant-acceleration Kalman filter
+
+Benchmarking
+- Curved-motion scenarios
+- False detections 
+- Missed detections
+
+Data Association
 - Hungarian assignment
-- OpenCV-based visualization
+
+Visualization
+- Animated tracker visualization
+
+Perception
+- OpenCV
 - Real sensor integration
 
 ---
@@ -408,9 +444,13 @@ Completed
 - ✅ Benchmark datasets
 - ✅ Trajectory visualization
 - ✅ Tracker debug visualization
+- ✅ Constant-velocity Kalman filter state estimation
+- ✅ Standalone Kalman filter validation
+- ✅ Kalman filter integration
+- ✅ Kalman parameter tuning
 
 In Progress
-- 🚧 Kalman filter integration
+- 🚧 Robust benchmark scenarios
 
 Planned
 - ⬜ Hungarian assignment

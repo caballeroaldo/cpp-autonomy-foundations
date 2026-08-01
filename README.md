@@ -12,7 +12,7 @@ The goal of this repository is to strengthen:
 - Data structures and algorithms
 - Systems thinking
 - Spatial reasoning and tracking
-- Foundations for perception pipelines
+- Foundations for autonomous perception systems
 
 ---
 
@@ -20,11 +20,11 @@ The goal of this repository is to strengthen:
 
 - Modular C++ multi-object tracking system
 - KD-tree accelerated data association
-- Constant-velocity motion prediction
-- Synthetic benchmark generation
+- Constant-velocity Kalman Filter state estimation
+- Synthetic benchmark generation and quantitative evaluation
 - Quantitative prediction error evaluation
 - Trajectory visualization
-- Tracker debugging visualization
+- Interactive tracker debugging and visualization tools
 
 ---
 
@@ -116,7 +116,9 @@ Projects focused on moving from manually entered detections toward perception-st
 - File-based frame ingestion
 - Automatic frame discovery
 - KD-tree accelerated data association
-- Constant-velocity motion prediction
+- Constant-velocity Kalman filter state estimation
+- Tuned Kalman filter parameters
+- Standalone Kalman filter validation
 - Configurable tracker parameters
 - Prediction error evaluation
 - Synthetic traffic generation
@@ -124,7 +126,7 @@ Projects focused on moving from manually entered detections toward perception-st
 - Trajectory export (CSV)
 - Frame state export (CSV)
 - Trajectory visualization
-- Tracker debug visualization
+- Tracker debug visualization (CLI)
 
 ### Pipeline Architecture
 
@@ -135,7 +137,7 @@ Frame Files
           ↓
 Frame Loader
           ↓
-Motion Prediction
+Kalman State Estimation
           ↓
 KD-Tree Association
           ↓
@@ -155,7 +157,9 @@ Trajectory Plot   Tracker Debug View
 
 ![Trajectory Plot](perception_pipeline/output/trajectory_plot.png)
 
-Shows the complete tracked trajectory of every object throughout the scenario.
+Shows the corrected Kalman filter state estimate for each tracked object across the entire sequence.
+
+The visualization utility supports both trajectory plots and frame-level tracker debugging through a command-line interface, allowing different visualization modes without modifying the source code.
 
 ---
 
@@ -163,7 +167,7 @@ Shows the complete tracked trajectory of every object throughout the scenario.
 
 ![Tracker Debug View](perception_pipeline/output/tracker_frame_10.png)
 
-Shows the internal state of the tracker for a single frame, including predicted positions, corrected positions, association errors, velocity estimates, and persistent track identities.
+Shows the internal state of the tracker for a single frame, including Kalman filter predictions, corrected state estimates, association errors, velocity estimates, and persistent track identities.
 
 ---
 
@@ -245,7 +249,9 @@ clang++ -std=c++17 -Wall -Wextra Basics/calculator.cpp -o calculator
 
 - File-based detection ingestion
 - KD-tree accelerated data association
-- Constant-velocity motion prediction
+- Constant-velocity Kalman Filter state estimation
+- Kalman parameter tuning
+- Standalone Kalman filter validation
 - Configurable tracker parameters
 - Prediction error evaluation
 - Synthetic traffic generation
@@ -255,7 +261,7 @@ clang++ -std=c++17 -Wall -Wextra Basics/calculator.cpp -o calculator
 
 ### Next Milestone
 
-- Constant-velocity Kalman filter
+- Robust benchmark scenarios
 - Curved-motion benchmark datasets
 - False detections and missed detections
 - Animated tracker visualization
@@ -273,10 +279,12 @@ Completed
 - ✅ Prediction error evaluation
 - ✅ Trajectory visualization
 - ✅ Tracker debug visualization
+- ✅ Constant-velocity Kalman filter
+- ✅ Visualization command-line interface
 
 Currently Working On
 
-- 🚧 Constant-velocity Kalman filter
+- 🚧 Robust benchmark scenarios
 
 Future Goals
 
@@ -300,7 +308,7 @@ Frame Files
           ↓
 Frame Loader
           ↓
-Motion Prediction
+Kalman State Estimation
           ↓
 KD-Tree Association
           ↓

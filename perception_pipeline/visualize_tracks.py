@@ -4,12 +4,13 @@ import csv
 from pathlib import Path
 import sys
 from typing import Dict, List, Tuple
+import argparse
 
 import matplotlib.pyplot as plt
 from dataclasses import dataclass
 from matplotlib.lines import Line2D
 
-VISUALIZATION_MODE = "tracker" # or trajectory
+parser = argparse.ArgumentParser(description="Visualize tracking results.")
 
 @dataclass
 class FrameRecord:
@@ -53,6 +54,22 @@ def load_frame_data(csv_path: Path) -> List[FrameRecord]:
             )
     
     return records
+
+def list_available_frames(records: List[FrameRecord]) -> None:
+    """Print the available frame numbers in frame_data.csv."""
+
+    frame_counts = {}
+
+    for record in records:
+        frame_counts[record.frame] = (frame_counts.get(record.frame, 0) + 1)
+
+    print("\nAvailable Frames")
+    print("----------------")
+
+    for frame in sorted(frame_counts):
+        print(f"Frame {frame:>2} ({frame_counts[frame]} tracks)")
+
+    print(f"\nTotal Frames: {len(frame_counts)}")
 
 def read_track_csv(csv_path: Path) -> List[Tuple[int, float, float]]:
     points: List[Tuple[int, float, float]] = []
@@ -110,7 +127,7 @@ def plot_tracks(tracks: Dict[str, List[Tuple[int, float, float]]], save_path: Pa
                 fontsize=6,
             )
 
-    plt.title("KD-Tree Accelerated Multi-Object Tracking")
+    plt.title("Kalman Filter State Estimates\nKD-Tree Multi-Object Tracking")
     plt.xlabel("x")
     plt.ylabel("y")
     plt.grid(True)
@@ -250,37 +267,74 @@ def plot_tracker_frame( records: List[FrameRecord], frame_number: int , save_pat
     
 
 def main() -> int:
-    script_dir = Path(__file__).resolve().parent
-    output_dir = script_dir / "output"
-    save_path = output_dir / "trajectory_plot.png"
-    # tracker_save_path = (output_dir / f"tracker_frame_{frame_number}.png")
+    parser = argparse.ArgumentParser(
+        description="Visualize perception pipeline tracking results."
+        )
 
-    if len(sys.argv) > 1:
-        output_dir = Path(sys.argv[1]).resolve()
-        save_path = output_dir / "trajectory_plot.png"
+    parser.add_argument(
+        "--tracker",
+        action="store_true",
+        help="Generate the tracker debug visualization."
+        )
+
+    parser.add_argument(
+        "--frame",
+        type=int,
+        default=10,
+        help="Frame number for tracker visualization."
+        )
+
+    parser.add_argument(
+        "--list-frames",
+        action="store_true",
+        help="List all avaiable frame numbers in frame_data.csv"
+    )
+
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Directory containing exported CSV files."
+    )
+
+    args = parser.parse_args()
+    script_dir = Path(__file__).resolve().parent
+    if args.output is None:
+        output_dir = script_dir / "output"
+    else:
+        output_dir = args.output.resolve()
 
     try:
-        if VISUALIZATION_MODE == "trajectory":
-            tracks = load_tracks(output_dir)
-            plot_tracks(tracks, save_path)
-            print(f"Saved plot to: {save_path}")
-
-        elif VISUALIZATION_MODE == "tracker":
-            frame_number = 10
-            tracker_save_path = (output_dir /f"tracker_frame_{frame_number}.png")
-
-            frame_records = load_frame_data( output_dir / "frame_data.csv")
-
-            plot_tracker_frame(frame_records, frame_number, tracker_save_path)
-            print(f"Saved plot to: {tracker_save_path}")
-
-
-        else:
-            raise ValueError(
-                f"Unknown visualization mode: {VISUALIZATION_MODE}"
+        if args.list_frames:
+            frame_records = load_frame_data( output_dir / "frame_data.csv" )
+            list_available_frames(frame_records)
+            return 0
+        elif args.tracker:
+            frame_records = load_frame_data(
+                output_dir / "frame_data.csv"
             )
-
+            tracker_save_path = (
+                output_dir /
+                f"tracker_frame_{args.frame}.png"
+            )
+            plot_tracker_frame(
+                frame_records,
+                args.frame,
+                tracker_save_path,
+            )
+        else:
+            trajectory_save_path = (
+                output_dir /
+                "trajectory_plot.png"
+            )
+            tracks = load_tracks(output_dir)
+            plot_tracks(
+                tracks,
+                trajectory_save_path,
+            )
+            print(f"Saved plot to: {trajectory_save_path}")
         return 0
+
     except Exception as e:
         print(f"Error: {e}")
         return 1
