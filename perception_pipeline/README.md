@@ -24,8 +24,8 @@ The purpose of this project is to move from manual point entry to a more realist
 3. Maintain object identities across frames
 4. Track trajectories over time
 5. Evaluate tracking performance using quantitative metrics
-6. Export trackings tate for visualization and debugging
-7. Build a modular architecture suitable for future Kalman filtering and senor integration
+6. Export tracking state for visualization and debugging
+7. Build a modular architecture suitable for future Kalman filtering and sensor integration
 
 This phase bridges the gap between a terminal-based tracker and a more complete perception system.
 
@@ -35,7 +35,7 @@ This phase bridges the gap between a terminal-based tracker and a more complete 
 
 - File-based frame loading
 - Automatic frame discovery
-- Synthetic traffic generation
+- Scenario-based benchmark generation
 - KD-tree accelerated nearest-neighbor association
 - Constant-velocity Kalman Filter state estimation
 - Tuned Kalman filter parameters
@@ -56,11 +56,18 @@ This phase bridges the gap between a terminal-based tracker and a more complete 
 
 ```text
 perception-pipeline/
+├── benchmarks/
+│   ├── BENCHMARKS.md
+│   └── benchmark_results.md
+│   
 ├── frames/
-│   ├── intersection_demo/
-│   │   ├── frame_01.txt
-│   │   ├── frame_02.txt
-│   │   └── ...
+│   ├── prediction_demo_clean/
+│   ├── prediction_demo_noisy/
+│   ├── acceleration_demo/
+│   ├── curved_demo/
+│   ├── occlusion_demo/
+│   ├── false_detection_demo/
+│   └── crossing_demo/
 │
 ├── output/
 │   ├── track_0.csv
@@ -134,27 +141,24 @@ Example:
 
 # Synthetic Traffic Generator
 
-The pipeline includes a synthetic traffic generator that creates realistic frame-by-frame detections.
+The scenario-based benchmark generator now supports multiple configurable benchmark scenarios through a command-line interface. Each scenario isolates a specific tracking challenge while keeping the remaining scene characteristics unchanged, enabling reproducible evaluation of the perception pipeline.
 
-Current scenarios include:
-
-- Horizontal traffic
-- Vertical traffic
-- Crossing traffic
-- Late-entering vehicles
-- Merge-like behavior
-- Curved trajectories
-
-Generate a dataset:
-
+For example:
 ```bash
 python3 generate_traffic_frames.py \
-    --output frames/intersection_demo \
-    --frames 10 \
+    --scenario prediction \
+    --output frames/prediction_demo_clean \
+    --noise 0 \
     --clear
 ```
+Supported benchmark scenarios:
 
-The generated frames are then consumed directly by the perception pipeline.
+• prediction
+• acceleration
+• curved
+• occlusion
+• false_detection
+• crossing
 
 ---
 
@@ -163,7 +167,7 @@ The generated frames are then consumed directly by the perception pipeline.
 The current perception pipeline follows the architecture below:
 
 ```text
-Synthetic Traffic Generator
+Benchmark Scenario Generator
           ↓
 Frame Files
           ↓
@@ -282,7 +286,16 @@ Trajectory data is exported as CSV files and visualized using a Python plotting 
 Generate the visualization for tracker plot at a specific frame and saved to a specifc output directory:
 
 ```bash
-python3 visualize_tracks.py \ --tracker \ --frame 10 \ --output output
+python3 visualize_tracks.py \
+  --tracker \ 
+  --frame 10 \ 
+  --output output
+```
+
+```bash
+python3 visualize_tracks.py \
+    --trajectory \
+    --output output
 ```
 
 Example output:
@@ -314,11 +327,17 @@ Example Output:
 # Benchmarking
 
 The pipeline includes configurable synthetic datasets for evaluating prediction performance.
+All benchmark datasets are generated through the scenario-based frame generator, allowing experiments to be reproduced using a single command-line argument.
 
-Current datasets include:
+Current benchmark scenarios include:
 
-- Clean detections
-- Noisy detections
+- Prediction (clean)
+- Prediction (noisy)
+- Acceleration
+- Curved motion
+- Temporary occlusion
+- False detections
+- Crossing vehicles
 
 Prediction quality is evaluated using:
 
@@ -328,6 +347,15 @@ Prediction quality is evaluated using:
 - Missed associations
 
 These benchmarks provide a baseline for evaluating future motion models such as Kalman filtering.
+
+## Benchmark Documentation
+
+The benchmark suite is documented separately:
+
+- `benchmarks/BENCHMARKS.md` describes the purpose and design of each benchmark scenario.
+- `benchmarks/BENCHMARK_RESULTS.md` records quantitative results and observations for each benchmark scenario.
+
+Together, these benchmark scenarios provide a reproducible framework for evaluating future tracking improvements, including alternative motion models and data association algorithms.
 
 ---
 
@@ -386,25 +414,29 @@ Known limitations:
 
 # Future Improvements
 
-Planned next steps include:
-
 Motion Models
+
 - Adaptive process and measurement noise
 - Constant-acceleration Kalman filter
 
-Benchmarking
-- Curved-motion scenarios
-- False detections 
-- Missed detections
-
 Data Association
+
 - Hungarian assignment
+- Identity-switch evaluation
+
+Benchmarking
+
+- Dense multi-object intersections
+- Closely spaced vehicles
+- Stop-and-go traffic
 
 Visualization
+
 - Animated tracker visualization
 
 Perception
-- OpenCV
+
+- OpenCV integration
 - Real sensor integration
 
 ---
@@ -434,28 +466,30 @@ Together, they form the foundation for a future perception-style application.
 
 # Development Progress
 
-Completed
-- ✅ File-based detection ingestion
-- ✅ KD-tree accelerated association
-- ✅ Constant-velocity motion prediction
-- ✅ Configurable tracker parameters
-- ✅ Prediction error evaluation
-- ✅ Synthetic traffic generation
-- ✅ Benchmark datasets
-- ✅ Trajectory visualization
-- ✅ Tracker debug visualization
-- ✅ Constant-velocity Kalman filter state estimation
-- ✅ Standalone Kalman filter validation
-- ✅ Kalman filter integration
-- ✅ Kalman parameter tuning
+## Completed
+- File-based detection ingestion
+- KD-tree accelerated association
+- Constant-velocity Kalman filter
+- Kalman parameter tuning
+- Standalone Kalman filter validation
+- Prediction error evaluation
+- Scenario-based benchmark generation framework
+- Benchmark suite documentation
+- Trajectory visualization
+- Tracker debug visualization
+- Visualization command-line interface
+- Acceleration benchmark
+- Curved-motion benchmark
+- Occlusion benchmark
+- False-detection benchmark
+- Crossing benchmark
 
-In Progress
-- 🚧 Robust benchmark scenarios
+## In Progress
+- Hungarian Assignment
 
-Planned
-- ⬜ Hungarian assignment
-- ⬜ Curved-motion benchmarks
-- ⬜ False detections
-- ⬜ Animated visualization
-- ⬜ Video-based perception
-- ⬜ OpenCV integration
+## Planned
+- Adaptive Kalman filter tuning
+- Constant-acceleration motion model
+- Animated visualization
+- OpenCV integration
+- Video-based perception

@@ -2,6 +2,8 @@
 
 This repository contains my C++ projects and systems-focused engineering work as I build toward developing software for autonomous driving, perception, robotics, and real-time systems.
 
+In addition to implementing tracking algorithms from first principles, this repository emphasizes reproducible evaluation through a configurable benchmark suite, allowing tracking approaches to be compared across standardized perception scenarios.
+
 This repository follows a milestone-based development approach where each project builds upon the previous one to gradually construct the foundations of an autonomous perception stack.
 
 Rather than relying on existing perception frameworks, each component is implemented from first principles to develop a deeper understanding of the algorithms, data structures, software architecture, and evaluation techniques used in modern perception systems.
@@ -25,6 +27,7 @@ The goal of this repository is to strengthen:
 - Quantitative prediction error evaluation
 - Trajectory visualization
 - Interactive tracker debugging and visualization tools
+- Reproducible perception benchmark suite
 
 ---
 
@@ -111,6 +114,8 @@ See: `tracking/README.md`
 
 Projects focused on moving from manually entered detections toward perception-style data pipelines.
 
+The perception pipeline includes a configurable benchmark generation framework that produces reproducible synthetic datasets for evaluating motion models, track management, and data association.
+
 ### Current Features
 
 - File-based frame ingestion
@@ -121,8 +126,8 @@ Projects focused on moving from manually entered detections toward perception-st
 - Standalone Kalman filter validation
 - Configurable tracker parameters
 - Prediction error evaluation
-- Synthetic traffic generation
-- Benchmark datasets
+- Scenario-based benchmark generation
+- Reproducible benchmark suite
 - Trajectory export (CSV)
 - Frame state export (CSV)
 - Trajectory visualization
@@ -131,7 +136,7 @@ Projects focused on moving from manually entered detections toward perception-st
 ### Pipeline Architecture
 
 ```text
-Synthetic Traffic Generator
+Scenario-based benchmark generation
           ↓
 Frame Files
           ↓
@@ -254,17 +259,22 @@ clang++ -std=c++17 -Wall -Wextra Basics/calculator.cpp -o calculator
 - Standalone Kalman filter validation
 - Configurable tracker parameters
 - Prediction error evaluation
-- Synthetic traffic generation
-- Benchmark datasets
+- Scenario-based benchmark generation framework
+- Benchmark suite documentation
+- Aceelaeration benchmark
+- Curved-motion benchmark
+- Occlusion benchmark
+- False-detection benchmark
+- Cross-vehicle benchmark
 - Trajectory visualization
 - Tracker debug visualization
 
+
 ### Next Milestone
 
-- Robust benchmark scenarios
-- Curved-motion benchmark datasets
-- False detections and missed detections
-- Animated tracker visualization
+- Hungarian assignment for optimal data association
+- Association benchmarking and comparison
+- Identity-switch evaluation
 
 ---
 
@@ -281,19 +291,22 @@ Completed
 - ✅ Tracker debug visualization
 - ✅ Constant-velocity Kalman filter
 - ✅ Visualization command-line interface
+- ✅ Robust benchmark scenarios
 
 Currently Working On
 
-- 🚧 Robust benchmark scenarios
+- 🚧 Hungarian assignment for globally optimal track-to-detection association
 
 Future Goals
 
-- ⬜ Hungarian assignment
-- ⬜ Curved-motion benchmark datasets
-- ⬜ False detections
+Future Goals
+
+- ⬜ Adaptive Kalman filter tuning
+- ⬜ Constant-acceleration motion model
 - ⬜ Animated tracker visualization
 - ⬜ OpenCV integration
 - ⬜ Video-based perception
+- ⬜ Real sensor integration
 
 ---
 
@@ -302,7 +315,7 @@ Future Goals
 Building a perception pipeline foundation by separating:
 
 ```text
-Synthetic Traffic Generator
+Scenario-based Benchmark Generator
           ↓
 Frame Files
           ↓
