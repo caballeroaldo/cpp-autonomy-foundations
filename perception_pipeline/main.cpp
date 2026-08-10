@@ -9,6 +9,7 @@
 #include "../tracking/tracker.hpp"
 #include "../tracking/metrics.hpp"
 #include "../tracking/kalman_filter.hpp"
+#include "../tracking/association.hpp"
 #include "frame_loader.hpp"
 #include "trajectory_export.hpp"
 #include "frame_export.hpp"
@@ -80,7 +81,7 @@ int main(int argc, char** argv) {
                 activeTrack.track.predictedPosition = p;
                 activeTrack.track.velocity = {0,0};
                 activeTrack.track.missedFrames = 0;
-                activeTrack.track.history.push_back({frameNumber, p});
+                activeTrack.track.history.push_back({frameNumber, p, p});
                 
                 activeTrack.filter.initialize(p);
                 activeTracks.push_back(activeTrack);
@@ -104,16 +105,17 @@ int main(int argc, char** argv) {
         vector<bool> trackUsed(activeTracks.size(), false);
 
         for (const Point& p : currentFrame) {
-            double minDist = numeric_limits<double>::max();
-            int bestTrackIndex = -1;
             Point predicted;
 
-            if (root != nullptr && !activeTracks.empty()) {
-                bestTrackIndex = findBestUnusedTrackIndex(root, p, trackUsed);
-                if (bestTrackIndex != -1) {
-                    predicted = activeTracks[bestTrackIndex].track.predictedPosition;
-                    minDist = squaredDistance(p, predicted);
-                }
+            Association association = findBestAssociation(root, p, trackUsed);
+
+            int bestTrackIndex = association.trackIndex;
+            double minDist = association.squaredDistance;
+
+            if (bestTrackIndex != -1) {
+                predicted = activeTracks[bestTrackIndex].track.predictedPosition;
+
+                minDist = squaredDistance(p, predicted);
             }
 
             if (bestTrackIndex != -1 &&

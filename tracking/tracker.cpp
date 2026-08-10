@@ -62,7 +62,7 @@ Track createTrack(int trackId, const Point& position, int frameNumber) {
     track.velocity = {0,0};
     track.missedFrames = 0;
 
-    track.history.push_back({frameNumber, position});
+    track.history.push_back({frameNumber, position, position});
 
     return track;
 }
