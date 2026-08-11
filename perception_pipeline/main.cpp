@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
 
         Node* root = buildKDTree(items);
         CostMatrix costMatrix = buildCostMatrix(predictedTrackPositions,currentFrame);
-        (void)hungarianAssignment(costMatrix);
+        // (void)hungarianAssignment(costMatrix);
         vector<bool> trackUsed(activeTracks.size(), false);
 
         for (const Point& p : currentFrame) {

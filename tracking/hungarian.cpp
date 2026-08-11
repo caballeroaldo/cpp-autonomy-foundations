@@ -29,6 +29,10 @@ namespace {
         CoverState cover;
     };
 
+    struct AugmentingPath {
+        std::vector<ZeroState*> zeros;
+    };
+
     //--------------------------------------------------
     // Matrix Reduction
     //--------------------------------------------------
@@ -114,45 +118,24 @@ namespace {
     // Cover Computation
     //--------------------------------------------------
 
-    CoverState computeMinimumCover(const CostMatrix& matrix, const std::vector<ZeroState>& starredZeros) {
-        CoverState cover;
+    void initializeCover(HungarianState& state) {
+        state.cover.coveredRows.assign(state.matrix.costs.size(), false);
 
-        cover.coveredRows.assign(
-            matrix.costs.size(),
-            false);
+        state.cover.coveredColumns.assign(state.matrix.costs[0].size(), false);
 
-        if (!matrix.costs.empty()) {
-            cover.coveredColumns.assign(
-                matrix.costs[0].size(),
-                false);
+        for (const auto& zero : state.starredZeros) {
+            state.cover.coveredColumns[zero.col] = true;
         }
-
-        for (const auto& zero : starredZeros) {
-            if (zero.row >= 0) {
-                cover.coveredRows[zero.row] = true;
-            }
-
-            if (zero.col >= 0) {
-                cover.coveredColumns[zero.col] = true;
-            }
-        }
-        return cover;
     }
 
-    bool hasCompleteCover(const CoverState& cover, const CostMatrix& matrix) {
-        std::size_t lines = 0;
-
-        for (bool row : cover.coveredRows) {
-            if (row)
-                lines++;
+    bool allColumnsCovered(const HungarianState& state) {
+        for (bool covered : state.cover.coveredColumns) {
+            if (!covered) {
+                return false;
+            }
         }
 
-        for (bool column : cover.coveredColumns) {
-            if (column)
-                lines++;
-        }
-
-        return lines >= matrix.costs.size();
+        return true;
     }
 
     //--------------------------------------------------
@@ -268,6 +251,16 @@ namespace {
         return nullptr;
     }
 
+    ZeroState* findMutablePrimeInRow(HungarianState& state, int row) {
+        for (auto& zero : state.primedZeros) {
+            if (zero.row == row) {
+                return &zero;
+            }
+        }
+
+        return nullptr;
+    }
+
     ZeroState* findMutableStarInColumn(HungarianState& state, int col) {
         for (auto& zero : state.starredZeros) {
             if (zero.col == col) {
@@ -295,6 +288,90 @@ namespace {
 
     void toggleStar(ZeroState& zero) {
         zero.starred = !zero.starred;
+    }
+
+    void updateCover(HungarianState& state, int row) {
+        state.cover.coveredRows[row] = true;
+
+        const ZeroState* star = findStarInRow(state, row);
+
+        if (star != nullptr) {
+            state.cover.coveredColumns[star->col] = false;
+        }
+    }
+
+    //--------------------------------------------------
+    // Augmenting Path
+    //--------------------------------------------------
+
+    AugmentingPath augmentPath(HungarianState& state, ZeroState* startingPrime) {
+        AugmentingPath path;
+
+        path.zeros.push_back(startingPrime);
+
+        while (true) {
+            ZeroState* last = path.zeros.back();
+
+            if (last->primed) {
+                ZeroState* star = findMutableStarInColumn(state, last->col);
+
+                if (star == nullptr) {
+                    break;
+                }
+
+                path.zeros.push_back(star);
+            }
+            else
+            {
+                ZeroState* prime = findMutablePrimeInRow(state, last->row);
+
+                if (prime == nullptr) {
+                    break;
+                }
+                path.zeros.push_back(prime);
+            }
+        }
+
+        return path;
+    }
+
+    void applyAugmentingPath(HungarianState& state, const AugmentingPath& path)
+    {
+        // Remove starred zeros on the path.
+        for (const auto* zero : path.zeros) {
+            if(!zero->starred) {
+                continue;
+            }
+
+            auto it = std::remove_if(
+                state.starredZeros.begin(), state.starredZeros.end(),[&](const ZeroState& current) {
+                    return current.row == zero->row && current.col == zero->col;
+                });
+            state.starredZeros.erase(it, state.starredZeros.end());
+        }
+
+        // Promote primed zeros to starred zeros.
+        for (const auto* zero : path.zeros) {
+            if (!zero->primed) {
+                continue;
+            }
+
+            ZeroState star = *zero;
+
+            star.primed = false;
+            star.starred = true;
+
+            state.starredZeros.push_back(star);
+        }
+
+        // Remove all primed zeros.
+        clearPrimedZeros(state);
+
+        // Reset the cover.
+        clearCover(state);
+
+        // Reinitialize the cover.
+        initializeCover(state);
     }
 
     //--------------------------------------------------
@@ -369,6 +446,30 @@ namespace {
                 << "\n";
         }
     }
+
+    void printAugmentingPath(const AugmentingPath& path) {
+        std::cout << "\nAugmenting Path\n";
+        std::cout << "----------------\n";
+        
+        std::cout << path.zeros.size() << "\n";
+
+        for (const auto* zero : path.zeros) {
+            std::cout
+                << "("
+                << zero->row
+                << ", "
+                << zero->col
+                << ") ";
+
+            if (zero->starred)
+                std::cout << "[STAR]";
+
+            if (zero->primed)
+                std::cout << "[PRIME]";
+
+            std::cout << "\n";
+        }
+    }
 }
 
 //--------------------------------------------------
@@ -396,6 +497,7 @@ CostMatrix buildCostMatrix(const std::vector<Point>& predictedPositions, const s
 //--------------------------------------------------
 
 std::vector<Association> hungarianAssignment(CostMatrix matrix) {
+    int iteration = 0;
     HungarianState state;
     state.matrix = std::move(matrix);
 
@@ -407,13 +509,27 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
     printCostMatrix(state.matrix, "Reduced Matrix");
     
     state.starredZeros = initializeStarredZeros(state.matrix);
-    
+    initializeCover(state);
+
     while(true) {
+        std::cout << "\n=========== Iteration "
+                  << iteration++
+                  << " ============\n";
+                
+        if (iteration > 20) {
+            std::cout << "Stopping after 20 iterations.\n";
+            break;
+        }
         
-        state.cover = computeMinimumCover(state.matrix, state.starredZeros);
+
+        printCoverState(state.cover);
+
+        std::cout << "Columns covered: "
+                  << allColumnsCovered(state)
+                  << "\n";
 
 
-        if (hasCompleteCover(state.cover, state.matrix)) {
+        if (allColumnsCovered(state)) {
             std::vector<Association> associations;
             for (const auto& zero : state.starredZeros) {
                 Association association;
@@ -431,10 +547,16 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
         if (findUncoveredZero(state.matrix, state.cover, uncoveredZero)) {
             primeZero(state, uncoveredZero);
             if (rowContainsStar(state, uncoveredZero.row)){
-                // TODO: Update Cover
+                updateCover(state, uncoveredZero.row);
+                printCoverState(state.cover);
             }
             else {
-                // TODO: Build augmenting path
+                ZeroState* prime = &state.primedZeros.back();
+                AugmentingPath path = augmentPath(state, prime);
+
+                printAugmentingPath(path);
+
+                applyAugmentingPath(state, path);
             }
         } else {
             double minimum = findMinimumUncoveredValue(state.matrix, state.cover);
