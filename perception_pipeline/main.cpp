@@ -10,6 +10,7 @@
 #include "../tracking/metrics.hpp"
 #include "../tracking/kalman_filter.hpp"
 #include "../tracking/association.hpp"
+#include "../tracking/hungarian.hpp"
 #include "frame_loader.hpp"
 #include "trajectory_export.hpp"
 #include "frame_export.hpp"
@@ -106,7 +107,6 @@ int main(int argc, char** argv) {
         Node* root = buildKDTree(items);
         CostMatrix costMatrix = buildCostMatrix(predictedTrackPositions,currentFrame);
         (void)hungarianAssignment(costMatrix);
-        std::vector<Association> associations = associateTracks(costMatrix);
         vector<bool> trackUsed(activeTracks.size(), false);
 
         for (const Point& p : currentFrame) {
