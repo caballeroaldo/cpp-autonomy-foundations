@@ -95,13 +95,18 @@ int main(int argc, char** argv) {
         }
 
         vector<KDItem> items;
+        vector<Point> predictedTrackPositions;
         for (int i = 0; i < static_cast<int>(activeTracks.size()); i++) {
             activeTracks[i].filter.predict();
             activeTracks[i].track.predictedPosition = activeTracks[i].filter.position();
             items.push_back({activeTracks[i].track.predictedPosition, i});
+            predictedTrackPositions.push_back(activeTracks[i].track.predictedPosition);
         }
 
         Node* root = buildKDTree(items);
+        CostMatrix costMatrix = buildCostMatrix(predictedTrackPositions,currentFrame);
+        (void)hungarianAssignment(costMatrix);
+        std::vector<Association> associations = associateTracks(costMatrix);
         vector<bool> trackUsed(activeTracks.size(), false);
 
         for (const Point& p : currentFrame) {
