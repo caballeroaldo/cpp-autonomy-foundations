@@ -22,6 +22,13 @@ namespace {
         std::vector<bool> coveredColumns;
     };
 
+    struct HungarianState {
+        CostMatrix matrix;
+        std::vector<ZeroState> starredZeros;
+        std::vector<ZeroState> primedZeros;
+        CoverState cover;
+    };
+
     //--------------------------------------------------
     // Matrix Reduction
     //--------------------------------------------------
@@ -216,7 +223,79 @@ namespace {
         return false;
     }
 
+    void primeZero(HungarianState& state, const ZeroState& zero) {
+        ZeroState primed = zero;
 
+        primed.starred = false;
+        primed.primed = true;
+
+        state.primedZeros.push_back(primed);
+    }
+
+    //--------------------------------------------------
+    // Finding Zeros & Removing Prime Zeros and Covers
+    //--------------------------------------------------
+    const ZeroState* findStarInRow(const HungarianState& state, int row) {
+        for (const auto& zero : state.starredZeros) {
+            if (zero.row == row) {
+                return &zero;
+            }
+        }
+
+        return nullptr;
+    }
+
+    bool rowContainsStar(const HungarianState& state, int row) {
+
+        return findStarInRow(state, row) != nullptr;
+    }
+
+    const ZeroState* findStarInColumn(const HungarianState& state, int col) {
+        for (const auto& zero : state.starredZeros) {
+            if (zero.col == col) {
+                return &zero;
+            }
+        }
+        return nullptr;
+    }
+
+    const ZeroState* findPrimeInRow(const HungarianState& state, int row) {
+        for (const auto& zero : state.primedZeros) {
+            if (zero.row == row) {
+                return &zero;
+            }
+        }
+        return nullptr;
+    }
+
+    ZeroState* findMutableStarInColumn(HungarianState& state, int col) {
+        for (auto& zero : state.starredZeros) {
+            if (zero.col == col) {
+                return &zero;
+            }
+        }
+        return nullptr;
+    }
+
+    void clearPrimedZeros(HungarianState& state) {
+        state.primedZeros.clear();
+    }
+
+    void clearCover(HungarianState& state) {
+        std::fill(
+            state.cover.coveredRows.begin(),
+            state.cover.coveredRows.end(),
+            false);
+
+        std::fill(
+            state.cover.coveredColumns.begin(),
+            state.cover.coveredColumns.end(),
+            false);
+    }
+
+    void toggleStar(ZeroState& zero) {
+        zero.starred = !zero.starred;
+    }
 
     //--------------------------------------------------
     // Debug Utilities
@@ -317,18 +396,26 @@ CostMatrix buildCostMatrix(const std::vector<Point>& predictedPositions, const s
 //--------------------------------------------------
 
 std::vector<Association> hungarianAssignment(CostMatrix matrix) {
-    printCostMatrix(matrix, "Original Cost Matrix");
-    reduceRows(matrix);
-    reduceColumns(matrix);
-    printCostMatrix(matrix, "Reduced Cost Matrix");
+    HungarianState state;
+    state.matrix = std::move(matrix);
 
+    printCostMatrix(state.matrix, "Original Matrix");
+
+    reduceRows(state.matrix);
+    reduceColumns(state.matrix);
+
+    printCostMatrix(state.matrix, "Reduced Matrix");
+    
+    state.starredZeros = initializeStarredZeros(state.matrix);
+    
     while(true) {
-        auto starredZeros = initializeStarredZeros(matrix);
-        auto cover = computeMinimumCover(matrix, starredZeros);
+        
+        state.cover = computeMinimumCover(state.matrix, state.starredZeros);
 
-        if (hasCompleteCover(cover, matrix)) {
+
+        if (hasCompleteCover(state.cover, state.matrix)) {
             std::vector<Association> associations;
-            for (const auto& zero : starredZeros) {
+            for (const auto& zero : state.starredZeros) {
                 Association association;
                 association.trackIndex = zero.row;
                 association.detectionIndex = zero.col;
@@ -339,11 +426,21 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
             return associations;
         }
 
-        double minimum = findMinimumUncoveredValue(matrix, cover);
+        ZeroState uncoveredZero;
 
-        adjustMatrix(matrix, cover, minimum);
-
-        printCostMatrix(matrix, "Adjusted Matrix");
+        if (findUncoveredZero(state.matrix, state.cover, uncoveredZero)) {
+            primeZero(state, uncoveredZero);
+            if (rowContainsStar(state, uncoveredZero.row)){
+                // TODO: Update Cover
+            }
+            else {
+                // TODO: Build augmenting path
+            }
+        } else {
+            double minimum = findMinimumUncoveredValue(state.matrix, state.cover);
+            adjustMatrix(state.matrix, state.cover, minimum);
+            printCostMatrix(state.matrix, "Adjusted Matrix");
+        }
     }
 
     std::cout << "Hungarian algorithm did not converge.\n";
