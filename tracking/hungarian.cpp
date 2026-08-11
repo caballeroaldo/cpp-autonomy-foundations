@@ -233,24 +233,6 @@ namespace {
         return findStarInRow(state, row) != nullptr;
     }
 
-    const ZeroState* findStarInColumn(const HungarianState& state, int col) {
-        for (const auto& zero : state.starredZeros) {
-            if (zero.col == col) {
-                return &zero;
-            }
-        }
-        return nullptr;
-    }
-
-    const ZeroState* findPrimeInRow(const HungarianState& state, int row) {
-        for (const auto& zero : state.primedZeros) {
-            if (zero.row == row) {
-                return &zero;
-            }
-        }
-        return nullptr;
-    }
-
     ZeroState* findMutablePrimeInRow(HungarianState& state, int row) {
         for (auto& zero : state.primedZeros) {
             if (zero.row == row) {
@@ -284,10 +266,6 @@ namespace {
             state.cover.coveredColumns.begin(),
             state.cover.coveredColumns.end(),
             false);
-    }
-
-    void toggleStar(ZeroState& zero) {
-        zero.starred = !zero.starred;
     }
 
     void updateCover(HungarianState& state, int row) {
@@ -497,39 +475,44 @@ CostMatrix buildCostMatrix(const std::vector<Point>& predictedPositions, const s
 //--------------------------------------------------
 
 std::vector<Association> hungarianAssignment(CostMatrix matrix) {
-    int iteration = 0;
     HungarianState state;
     state.matrix = std::move(matrix);
 
+    #ifdef HUNGARIAN_DEBUG
     printCostMatrix(state.matrix, "Original Matrix");
+    #endif
 
     reduceRows(state.matrix);
     reduceColumns(state.matrix);
 
+    #ifdef HUNGARIAN_DEBUG
     printCostMatrix(state.matrix, "Reduced Matrix");
+    #endif
     
     state.starredZeros = initializeStarredZeros(state.matrix);
     initializeCover(state);
 
-    while(true) {
-        std::cout << "\n=========== Iteration "
-                  << iteration++
-                  << " ============\n";
-                
-        if (iteration > 20) {
-            std::cout << "Stopping after 20 iterations.\n";
-            break;
-        }
-        
+    int iteration = 0;
 
+    while(true) {
+
+        if (++iteration > 1000) {
+            throw std::runtime_error("Hungarian algorithm exceeded iteration limit");
+        }
+
+        #ifdef HUNGARIAN_DEBUG
         printCoverState(state.cover);
 
         std::cout << "Columns covered: "
                   << allColumnsCovered(state)
                   << "\n";
+        #endif
 
 
         if (allColumnsCovered(state)) {
+            if (state.starredZeros.size() != state.matrix.costs.size()) {
+                throw std::runtime_error ("Hungarian assignment incomplete.\n");
+            }
             std::vector<Association> associations;
             for (const auto& zero : state.starredZeros) {
                 Association association;
@@ -548,23 +531,29 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
             primeZero(state, uncoveredZero);
             if (rowContainsStar(state, uncoveredZero.row)){
                 updateCover(state, uncoveredZero.row);
+                #ifdef HUNGARIAN_DEBUG
                 printCoverState(state.cover);
+                #endif
             }
             else {
                 ZeroState* prime = &state.primedZeros.back();
                 AugmentingPath path = augmentPath(state, prime);
-
+                
+                #ifdef HUNGARIAN_DEBUG
                 printAugmentingPath(path);
+                #endif
 
                 applyAugmentingPath(state, path);
             }
         } else {
             double minimum = findMinimumUncoveredValue(state.matrix, state.cover);
             adjustMatrix(state.matrix, state.cover, minimum);
+            
+            #ifdef HUNGARIAN_DEBUG
             printCostMatrix(state.matrix, "Adjusted Matrix");
+            #endif
         }
     }
 
-    std::cout << "Hungarian algorithm did not converge.\n";
     return {};
 }
