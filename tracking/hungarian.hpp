@@ -7,6 +7,9 @@
 struct CostMatrix
 {
     std::vector<std::vector<double>> costs;
+
+    std::size_t originalTrackCount = 0;
+    std::size_t originalDetectionCount = 0;
 };
 
 //--------------------------------------------------

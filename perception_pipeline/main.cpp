@@ -95,20 +95,149 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        vector<KDItem> items;
+        // vector<KDItem> items;
         vector<Point> predictedTrackPositions;
         for (int i = 0; i < static_cast<int>(activeTracks.size()); i++) {
             activeTracks[i].filter.predict();
             activeTracks[i].track.predictedPosition = activeTracks[i].filter.position();
-            items.push_back({activeTracks[i].track.predictedPosition, i});
+            // items.push_back({activeTracks[i].track.predictedPosition, i});
             predictedTrackPositions.push_back(activeTracks[i].track.predictedPosition);
         }
 
-        Node* root = buildKDTree(items);
+        // Node* root = buildKDTree(items);
         CostMatrix costMatrix = buildCostMatrix(predictedTrackPositions,currentFrame);
         // (void)hungarianAssignment(costMatrix);
-        vector<bool> trackUsed(activeTracks.size(), false);
+        std::vector<Association> associations = hungarianAssignment(costMatrix);
+        #ifdef HUNGARIAN_DEBUG
+        std::cout << "\nHungarian Assignments\n";
+        std::cout << "---------------------\n";
 
+        for (const auto& association : associations) {
+            std::cout
+                << "Track "
+                << association.trackIndex
+                << " -> Detection "
+                << association.detectionIndex
+                << "\n";
+        }
+        std::cout << "\n";
+        #endif
+        std::vector<bool> trackUsed(activeTracks.size(), false);
+
+        std::vector<bool> detectionUsed(currentFrame.size(), false);
+
+        for (const Association& association : associations) {
+            int trackIndex = association.trackIndex;
+            int detectionIndex = association.detectionIndex;
+
+            Point detection =
+                currentFrame[detectionIndex];
+
+            Point predicted =
+                activeTracks[trackIndex]
+                    .track
+                    .predictedPosition;
+
+            double squaredPredictionError =
+                squaredDistance(
+                        predicted,
+                        detection);
+
+            double predictionError = std::sqrt(squaredPredictionError);
+
+            /* 
+            Metrics area 
+            */
+            metrics.totalPredictionError += predictionError;
+            metrics.predictionSamples++;
+            metrics.maxPredictionError = std::max(metrics.maxPredictionError, predictionError);
+            
+
+
+            activeTracks[trackIndex]
+                .filter
+                .update(detection);
+
+            Point correctedPosition =
+                activeTracks[trackIndex]
+                    .filter
+                    .position();
+
+            Point correctedVelocity =
+                activeTracks[trackIndex]
+                    .filter
+                    .velocity();
+
+            recordTrackObservation(
+                activeTracks[trackIndex].track,
+                correctedPosition,
+                correctedVelocity,
+                predicted,
+                predictionError,
+                frameNumber);
+            
+            metrics.successfulAssociations++;
+
+            /*
+            Frame Record Area
+            */
+            FrameRecord record;
+            record.frameNumber = frameNumber;
+            record.trackId = activeTracks[trackIndex].track.id;
+            record.predictedPosition = predicted;
+            record.position = activeTracks[trackIndex].track.position;
+            record.velocity = activeTracks[trackIndex].track.velocity;
+            record.predictionError = predictionError;
+            frameRecords.push_back(record);
+            trackUsed[trackIndex] = true;
+            detectionUsed[detectionIndex] = true;
+
+            printMatchResult(
+                detection,
+                activeTracks[trackIndex].track.id);
+        }
+
+        for (std::size_t detectionIndex = 0; detectionIndex < detectionUsed.size(); ++detectionIndex) {
+            if (detectionUsed[detectionIndex]) {
+                continue;
+            }
+
+            Point detection = currentFrame[detectionIndex];
+
+            ActiveTrack activeTrack;
+
+            activeTrack.track =
+                createTrack(
+                    nextTrackId++,
+                    detection,
+                    frameNumber);
+
+            activeTrack.filter.initialize(detection);
+
+            activeTracks.push_back(activeTrack);
+
+            metrics.tracksCreated++;
+
+            trackUsed.push_back(true);
+
+            printNewTrackResult(
+                detection,
+                activeTrack.track.id);
+        }
+
+        /*
+
+        --------------------------------------------------
+        Greedy KD-tree Association (Archived)
+
+        Preserved for future comparison with the Hungarian
+        assignment implementation.
+
+        TODO:
+        - Move to association_greedy.cpp
+        - Select via TrackerConfig::associationMethod
+
+        --------------------------------------------------        
         for (const Point& p : currentFrame) {
             Point predicted;
 
@@ -166,8 +295,9 @@ int main(int argc, char** argv) {
                 printNewTrackResult(p, activeTrack.track.id);
             }
         }
+        */
 
-        deleteTree(root);
+        // deleteTree(root);
 
         for (int i = 0; i < static_cast<int>(activeTracks.size()); i++) {
             if (!trackUsed[i]) {

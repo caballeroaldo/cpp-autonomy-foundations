@@ -78,7 +78,7 @@ namespace {
     // Zero Initialization
     //--------------------------------------------------
 
-    std::vector<ZeroState> initializeStarredZeros(const CostMatrix& matrix) {
+    std::vector<ZeroState> createInitialStarredZeros(const CostMatrix& matrix) {
         constexpr double EPSILON = 1e-9;
         std::vector<ZeroState> assignments;
 
@@ -457,12 +457,20 @@ namespace {
 CostMatrix buildCostMatrix(const std::vector<Point>& predictedPositions, const std::vector<Point>& detections) {
     CostMatrix matrix;
 
-    matrix.costs.resize(predictedPositions.size());
+    std::size_t trackCount = predictedPositions.size();
+    std::size_t detectionCount = detections.size();
 
-    for (std::size_t i = 0; i < predictedPositions.size(); i++) {
-        matrix.costs[i].resize(detections.size());
+    matrix.originalTrackCount = trackCount;
+    matrix.originalDetectionCount = detectionCount;
 
-        for (std::size_t j = 0; j < detections.size(); j++) {
+    std::size_t dimension = std::max(trackCount, detectionCount);
+
+    constexpr double DUMMY_COST = 1e12;
+
+    matrix.costs.assign(dimension, std::vector<double>(dimension,DUMMY_COST));
+
+    for (std::size_t i = 0; i < trackCount; i++) {
+        for (std::size_t j = 0; j < detectionCount; j++) {
             matrix.costs[i][j] = squaredDistance(predictedPositions[i],detections[j]);
         }
     }
@@ -489,7 +497,7 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
     printCostMatrix(state.matrix, "Reduced Matrix");
     #endif
     
-    state.starredZeros = initializeStarredZeros(state.matrix);
+    state.starredZeros = createInitialStarredZeros(state.matrix);
     initializeCover(state);
 
     int iteration = 0;
@@ -515,6 +523,14 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
             }
             std::vector<Association> associations;
             for (const auto& zero : state.starredZeros) {
+                if (static_cast<std::size_t>(zero.row) >= state.matrix.originalTrackCount) {
+                    continue;
+                }
+
+                if (static_cast<std::size_t>(zero.col) >= state.matrix.originalDetectionCount) {
+                    continue;
+                }
+                
                 Association association;
                 association.trackIndex = zero.row;
                 association.detectionIndex = zero.col;
