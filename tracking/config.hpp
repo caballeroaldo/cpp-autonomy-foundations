@@ -1,6 +1,11 @@
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
+enum class AssociationMethod {
+    Greedy, 
+    Hungarian
+};
+
 struct TrackerConfig {
     // Max distance allowed when associating a detection
     double maxAssociationDistanceSquared = 1000.0;
@@ -10,6 +15,8 @@ struct TrackerConfig {
 
     // Number of consecutive missed detections before deleting
     int maxMissedFrames = 3;
+    
+    AssociationMethod associationMethod = AssociationMethod::Hungarian;
 };
 
 #endif

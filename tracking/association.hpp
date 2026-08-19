@@ -16,3 +16,9 @@ Association findBestAssociation(
     const Point& detection,
     const std::vector<bool>& tracksUsed
 );
+
+std::vector<Association> greedyAssignment(
+    const std::vector<Point>& predictedPositions,
+    const std::vector<Point>& detections,
+    double maxAssociationDistanceSquared
+);

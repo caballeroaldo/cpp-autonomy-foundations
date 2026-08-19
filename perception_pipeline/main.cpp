@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <chrono>
 
 #include "../tracking/tracker.hpp"
 #include "../tracking/metrics.hpp"
@@ -49,12 +50,29 @@ int main(int argc, char** argv) {
     TrackerMetrics metrics;
     std::vector<FrameRecord> frameRecords;
 
+    double totalAssociationRuntimeMs = 0.0;
+    std::size_t processedAssociationFrames = 0;
+
     // Experimentation configuration
     config.velocitySmoothing = 0.0;
     // -----------------------------
 
     string frameFolder = (argc > 1) ? argv[1] : "frames";
     vector<string> frameFiles = getFrameFiles(frameFolder);
+
+    if (argc > 2) {
+        std::string method = argv[2];
+
+        if (method == "greedy") {
+            config.associationMethod = AssociationMethod::Greedy;
+        } else if (method == "hungarian") {
+            config.associationMethod = AssociationMethod::Hungarian;
+        } else {
+            std::cerr << "Unknown association method: " << method << "\n";
+            std::cerr << "Usage:\n" << " ./perception_pipeline <frame_folder> [greedy|hungarian]\n";
+            return 1;
+        }
+    }
 
     if (frameFiles.empty()) {
         cerr << "No frame files found in " << frameFolder << "\n";
@@ -95,19 +113,37 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        // vector<KDItem> items;
         vector<Point> predictedTrackPositions;
         for (int i = 0; i < static_cast<int>(activeTracks.size()); i++) {
             activeTracks[i].filter.predict();
             activeTracks[i].track.predictedPosition = activeTracks[i].filter.position();
-            // items.push_back({activeTracks[i].track.predictedPosition, i});
             predictedTrackPositions.push_back(activeTracks[i].track.predictedPosition);
         }
 
-        // Node* root = buildKDTree(items);
-        CostMatrix costMatrix = buildCostMatrix(predictedTrackPositions,currentFrame);
-        // (void)hungarianAssignment(costMatrix);
-        std::vector<Association> associations = hungarianAssignment(costMatrix);
+        
+        std::vector<Association> associations;
+
+        auto associationStart = std::chrono::high_resolution_clock::now();
+
+        std::cout << "Assocation Method: ";
+        switch (config.associationMethod) {
+            case AssociationMethod::Greedy:
+                std::cout<< "Greedy\n";
+                associations = greedyAssignment(predictedTrackPositions, currentFrame, config.maxAssociationDistanceSquared);
+                break;
+            case AssociationMethod::Hungarian:
+                std::cout << "Hungarian\n";
+                CostMatrix costMatrix = buildCostMatrix(predictedTrackPositions, currentFrame);
+                associations = hungarianAssignment(costMatrix);
+                break;
+        }
+
+        auto associationEnd = std::chrono::high_resolution_clock::now();
+        double associationTimeMs = std::chrono::duration<double,std::milli>(associationEnd - associationStart).count();
+
+        totalAssociationRuntimeMs += associationTimeMs;
+        processedAssociationFrames++;
+        
         #ifdef HUNGARIAN_DEBUG
         std::cout << "\nHungarian Assignments\n";
         std::cout << "---------------------\n";
@@ -225,80 +261,6 @@ int main(int argc, char** argv) {
                 activeTrack.track.id);
         }
 
-        /*
-
-        --------------------------------------------------
-        Greedy KD-tree Association (Archived)
-
-        Preserved for future comparison with the Hungarian
-        assignment implementation.
-
-        TODO:
-        - Move to association_greedy.cpp
-        - Select via TrackerConfig::associationMethod
-
-        --------------------------------------------------        
-        for (const Point& p : currentFrame) {
-            Point predicted;
-
-            Association association = findBestAssociation(root, p, trackUsed);
-
-            int bestTrackIndex = association.trackIndex;
-            double minDist = association.squaredDistance;
-
-            if (bestTrackIndex != -1) {
-                predicted = activeTracks[bestTrackIndex].track.predictedPosition;
-
-                minDist = squaredDistance(p, predicted);
-            }
-
-            if (bestTrackIndex != -1 &&
-                !trackUsed[bestTrackIndex] &&
-                minDist < config.maxAssociationDistanceSquared) {
-
-                double predictionError = std::sqrt(squaredDistance(predicted,p));
-                metrics.totalPredictionError += predictionError;
-                metrics.predictionSamples++;
-                metrics.maxPredictionError = std::max(metrics.maxPredictionError, predictionError);
-
-                activeTracks[bestTrackIndex].filter.update(p);
-                Point correctedPosition = activeTracks[bestTrackIndex].filter.position();
-                Point correctedVelocity = activeTracks[bestTrackIndex].filter.velocity();
-                // DEBUG activeTracks[bestTrackIndex].filter.printCorrection();
-
-                recordTrackObservation(activeTracks[bestTrackIndex].track, correctedPosition, correctedVelocity, predicted, predictionError, frameNumber);
-                
-                FrameRecord record;
-                record.frameNumber = frameNumber;
-                record.trackId = activeTracks[bestTrackIndex].track.id;
-                record.predictedPosition = predicted;
-                record.position = activeTracks[bestTrackIndex].track.position;
-                record.velocity = activeTracks[bestTrackIndex].track.velocity;
-                record.predictionError = predictionError;
-                frameRecords.push_back(record);
-
-                metrics.successfulAssociations++;
-                trackUsed[bestTrackIndex] = true;
-
-                printMatchResult(p, activeTracks[bestTrackIndex].track.id);
-            } else {
-                metrics.missedAssociations++;
-                ActiveTrack activeTrack;
-                activeTrack.track = createTrack(nextTrackId++, p, frameNumber);
-                activeTrack.filter.initialize(p);
-                activeTracks.push_back(activeTrack);
-
-
-                metrics.tracksCreated++;
-                trackUsed.push_back(true);
-
-                printNewTrackResult(p, activeTrack.track.id);
-            }
-        }
-        */
-
-        // deleteTree(root);
-
         for (int i = 0; i < static_cast<int>(activeTracks.size()); i++) {
             if (!trackUsed[i]) {
                 activeTracks[i].track.missedFrames++;
@@ -332,6 +294,12 @@ int main(int argc, char** argv) {
         printTrackHistory(activeTrack.track);
     }
     printTrackerMetrics(metrics);
+
+    std::cout << "\n================\n";
+    std::cout << "Association Metrics";
+    std::cout << "\n================\n";
+    std::cout << "Total Association Runtime (ms): " << totalAssociationRuntimeMs << "\n";
+    std::cout << "Average Association Time (ms): " << (processedAssociationFrames > 0 ? totalAssociationRuntimeMs / processedAssociationFrames : 0.0) << "\n";
 
     vector<Track> tracks;
     for (const ActiveTrack& activeTrack : activeTracks) {
