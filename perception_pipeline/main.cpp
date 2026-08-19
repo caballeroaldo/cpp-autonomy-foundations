@@ -6,6 +6,7 @@
 #include <string>
 #include <filesystem>
 #include <chrono>
+#include <iomanip>
 
 #include "../tracking/tracker.hpp"
 #include "../tracking/metrics.hpp"
@@ -134,6 +135,35 @@ int main(int argc, char** argv) {
             case AssociationMethod::Hungarian:
                 std::cout << "Hungarian\n";
                 CostMatrix costMatrix = buildCostMatrix(predictedTrackPositions, currentFrame);
+
+                if (frameNumber == 9 && config.associationMethod == AssociationMethod::Hungarian) {
+                    std::cout << "\n====================================\n";
+                    std::cout << "Frame 9 Regression Matrix\n";
+                    std::cout << "====================================\n";
+
+                    std::cout << std::setw(10) << "";
+
+                    for (std::size_t col = 0; col < costMatrix.costs[0].size(); ++col) {
+                        std::cout << std::setw(10)
+                                << ("D" + std::to_string(col));
+                    }
+
+                    std::cout << "\n";
+
+                    for (std::size_t row = 0; row < costMatrix.costs.size(); ++row) {
+                        std::cout << std::setw(10)
+                                << ("T" + std::to_string(row));
+
+                        for (double value : costMatrix.costs[row]) {
+                            std::cout << std::setw(10)
+                                    << value;
+                        }
+
+                        std::cout << "\n";
+                    }
+
+                    std::cout << "\n";
+                }
                 associations = hungarianAssignment(costMatrix);
                 break;
         }

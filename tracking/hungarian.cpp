@@ -17,6 +17,12 @@ namespace {
         bool primed = false;
     };
 
+    enum class Mark {
+        None, 
+        Star,
+        Prime
+    };
+
     struct CoverState {
         std::vector<bool> coveredRows;
         std::vector<bool> coveredColumns;
@@ -26,11 +32,19 @@ namespace {
         CostMatrix matrix;
         std::vector<ZeroState> starredZeros;
         std::vector<ZeroState> primedZeros;
+        std::vector<std::vector<Mark>> marks;
         CoverState cover;
+    };
+
+    struct PathNode {
+        int row;
+        int col;
     };
 
     struct AugmentingPath {
         std::vector<ZeroState*> zeros;
+
+        std::vector<PathNode> coordinates;
     };
 
     //--------------------------------------------------
@@ -142,20 +156,46 @@ namespace {
     // Matrix Adjustment
     //--------------------------------------------------
 
-    double findMinimumUncoveredValue(const CostMatrix& matrix, const CoverState& cover) {
+    double findMinimumUncoveredValue(HungarianState& state) {
         double minimum = std::numeric_limits<double>::max();
 
-        for (std::size_t row = 0; row < matrix.costs.size(); ++row) {
-            if (cover.coveredRows[row]) {
+        for (std::size_t row = 0; row < state.matrix.costs.size(); ++row) {
+            if (state.cover.coveredRows[row]) {
                 continue;
             }
 
-            for (std::size_t col = 0; col < matrix.costs[row].size(); ++col) {
-                if (cover.coveredColumns[col]) {
+            for (std::size_t col = 0; col < state.matrix.costs[row].size(); ++col) {
+                if (state.cover.coveredColumns[col]) {
+                    continue;
+                }
+                
+                bool starred = false;
+
+                for (const auto& current : state.starredZeros) {
+                    if (current.row == static_cast<int>(row) && current.col == static_cast<int>(col)) {
+                        starred = true;
+                        break;
+                    }
+                }
+
+                if (starred) {
                     continue;
                 }
 
-                minimum = std::min(minimum, matrix.costs[row][col]);
+                bool primed = false;
+
+                for (const auto& current : state.primedZeros) {
+                    if (current.row == static_cast<int>(row) && current.col == static_cast<int>(col)) {
+                        primed = true;
+                        break;
+                    }
+                }
+
+                if (primed) {
+                    continue;
+                }
+
+                minimum = std::min(minimum, state.matrix.costs[row][col]);
             }
         }
         return minimum;
@@ -181,18 +221,44 @@ namespace {
     // Uncovered Zero Search
     //--------------------------------------------------
 
-    bool findUncoveredZero(const CostMatrix& matrix, const CoverState& cover, ZeroState& zero) {
+    bool findUncoveredZero(const HungarianState& state, ZeroState& zero) {
         constexpr double EPSILON = 1e-9;
 
-        for (std::size_t row = 0; row < matrix.costs.size(); ++row) {
-            if (cover.coveredRows[row])
+        for (std::size_t row = 0; row < state.matrix.costs.size(); ++row) {
+            if (state.cover.coveredRows[row])
                 continue;
 
-            for (std::size_t col = 0; col < matrix.costs[row].size(); ++col) {
-                if (cover.coveredColumns[col])
+            for (std::size_t col = 0; col < state.matrix.costs[row].size(); ++col) {
+                if (state.cover.coveredColumns[col])
                     continue;
 
-                if (std::abs(matrix.costs[row][col]) < EPSILON) {
+                if (std::abs(state.matrix.costs[row][col]) < EPSILON) {
+                    bool starred = false;
+
+                    for (const auto& current : state.starredZeros) {
+                        if (current.row == static_cast<int>(row) && current.col == static_cast<int>(col)) {
+                            starred = true;
+                            break;
+                        }
+                    }
+
+                    if (starred) {
+                        continue;
+                    }
+
+                    bool primed = false;
+
+                    for (const auto& current : state.primedZeros) {
+                        if (current.row == static_cast<int>(row) && current.col == static_cast<int>(col)) {
+                            primed = true;
+                            break;
+                        }
+                    }
+
+                    if (primed) {
+                        continue;
+                    }
+
                     zero.row = static_cast<int>(row);
                     zero.col = static_cast<int>(col);
 
@@ -219,8 +285,14 @@ namespace {
     // Finding Zeros & Removing Prime Zeros and Covers
     //--------------------------------------------------
     const ZeroState* findStarInRow(const HungarianState& state, int row) {
-        for (const auto& zero : state.starredZeros) {
-            if (zero.row == row) {
+        for (std::size_t col = 0; col < state.marks[row].size(); ++col) {
+            if (state.marks[row][col] == Mark::Star) {
+                static ZeroState zero;
+                zero.row = row;
+                zero.col = static_cast<int>(col);
+                zero.starred = true;
+                zero.primed = false;
+
                 return &zero;
             }
         }
@@ -243,6 +315,32 @@ namespace {
         return nullptr;
     }
 
+    ZeroState* findMutablePrime(HungarianState& state, int row, int col) {
+        for (auto& zero : state.primedZeros) {
+            if (zero.row == row && zero.col == col) {
+                return &zero;
+            }
+        }
+        return nullptr;
+    }
+
+    const ZeroState* findPrimeInRow(const HungarianState& state, int row) {
+        for (std::size_t col = 0; col < state.marks[row].size(); ++col) {
+            if (state.marks[row][col] == Mark::Prime) {
+                static ZeroState zero;
+
+                zero.row = row;
+                zero.col = static_cast<int>(col);
+                zero.starred = false;
+                zero.primed = true;
+
+                return &zero;
+            }
+        }
+
+        return nullptr;
+    }
+
     ZeroState* findMutableStarInColumn(HungarianState& state, int col) {
         for (auto& zero : state.starredZeros) {
             if (zero.col == col) {
@@ -251,6 +349,24 @@ namespace {
         }
         return nullptr;
     }
+
+    const ZeroState* findStarInColumn(const HungarianState& state, int col) {
+        for (std::size_t row = 0; row < state.marks.size(); ++row) {
+            if (state.marks[row][col] == Mark::Star) {
+                static ZeroState zero;
+
+                zero.row = static_cast<int>(row);
+                zero.col = col;
+                zero.starred = true;
+                zero.primed = false;
+
+                return &zero;
+            }
+        }
+
+        return nullptr;
+    }
+
 
     void clearPrimedZeros(HungarianState& state) {
         state.primedZeros.clear();
@@ -286,6 +402,7 @@ namespace {
         AugmentingPath path;
 
         path.zeros.push_back(startingPrime);
+        path.coordinates.push_back({startingPrime->row, startingPrime->col});
 
         while (true) {
             ZeroState* last = path.zeros.back();
@@ -298,6 +415,7 @@ namespace {
                 }
 
                 path.zeros.push_back(star);
+                path.coordinates.push_back({star->row, star->col});
             }
             else
             {
@@ -307,34 +425,55 @@ namespace {
                     break;
                 }
                 path.zeros.push_back(prime);
+                path.coordinates.push_back({prime->row, prime->col});
             }
         }
 
         return path;
     }
 
-    void applyAugmentingPath(HungarianState& state, const AugmentingPath& path)
-    {
-        // Remove starred zeros on the path.
-        for (const auto* zero : path.zeros) {
-            if(!zero->starred) {
-                continue;
-            }
+    void rebuildStarredZeros(HungarianState& state) {
+        state.starredZeros.clear();
 
-            auto it = std::remove_if(
-                state.starredZeros.begin(), state.starredZeros.end(),[&](const ZeroState& current) {
-                    return current.row == zero->row && current.col == zero->col;
-                });
+        for (std::size_t row = 0; row < state.marks.size(); ++row) {
+            for (std::size_t col = 0; col < state.marks[row].size(); ++col) {
+                if (state.marks[row][col] == Mark::Star) {
+                    ZeroState zero;
+
+                    zero.row = static_cast<int>(row);
+                    zero.col = static_cast<int>(col);
+                    zero.starred = true;
+                    zero.primed = false;
+
+                    state.starredZeros.push_back(zero);
+                }
+            }
+        }
+    }
+
+    void applyAugmentingPath(HungarianState& state, const AugmentingPath& path) {
+        std::cout << "\nApplying path:\n";
+
+        for (const auto& node : path.coordinates) {
+            std::cout << "(" << node.row << ", " << node.col << ")\n";
+        }
+
+        // Remove starred zeros on the path.
+        for (const auto& node : path.coordinates) {
+            auto it = std::remove_if(state.starredZeros.begin(), state.starredZeros.end(),[&](const ZeroState& current) {
+                return current.row == node.row && current.col == node.col;
+            });
             state.starredZeros.erase(it, state.starredZeros.end());
         }
 
         // Promote primed zeros to starred zeros.
-        for (const auto* zero : path.zeros) {
-            if (!zero->primed) {
+        for (const auto& node : path.coordinates) {
+            auto prime = findMutablePrime(state, node.row, node.col);
+            if (prime == nullptr) {
                 continue;
             }
 
-            ZeroState star = *zero;
+            ZeroState star = *prime;
 
             star.primed = false;
             star.starred = true;
@@ -350,6 +489,13 @@ namespace {
 
         // Reinitialize the cover.
         initializeCover(state);
+        std::cout << "\nStarred zeros after augmentation\n";
+
+        for (const auto& zero : state.starredZeros) {
+            std::cout << "(" << zero.row << ", " << zero.col << ")\n";
+
+        }
+        std::cout << "\n";
     }
 
     //--------------------------------------------------
@@ -485,6 +631,7 @@ CostMatrix buildCostMatrix(const std::vector<Point>& predictedPositions, const s
 std::vector<Association> hungarianAssignment(CostMatrix matrix) {
     HungarianState state;
     state.matrix = std::move(matrix);
+    state.marks.assign(state.matrix.costs.size(), std::vector<Mark>(state.matrix.costs[0].size(), Mark::None));
 
     #ifdef HUNGARIAN_DEBUG
     printCostMatrix(state.matrix, "Original Matrix");
@@ -498,15 +645,50 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
     #endif
     
     state.starredZeros = createInitialStarredZeros(state.matrix);
+    
+    for(const auto& zero : state.starredZeros) {
+        state.marks[zero.row][zero.col] = Mark::Star;
+    }
+
+    /*
+    #ifdef HUNGARIAN_DEBUG
+    std::cout << "\nInitial Mark Matrix\n";
+    for (std::size_t row = 0; row < state.marks.size(); ++row) {
+        for (std::size_t col = 0; col < state.marks[row].size(); ++col) {
+            if (state.marks[row][col] == Mark::Star) {
+                std::cout << "* ";
+            }
+            else {
+                std::cout << ". ";
+            }
+        }
+
+        std::cout << "\n";
+    }
+    #endif
+    */
+
     initializeCover(state);
 
     int iteration = 0;
 
-    while(true) {
+    
 
+    while(true) {
+        std::cout << "Iteration " << iteration << "\n";
         if (++iteration > 1000) {
             throw std::runtime_error("Hungarian algorithm exceeded iteration limit");
         }
+
+        std::size_t coveredCount = 0;
+
+        for (bool covered : state.cover.coveredColumns) {
+            if (covered) {
+                coveredCount++;
+            }
+        }
+
+        std::cout << "Covered columns: " << coveredCount << " / " << state.cover.coveredColumns.size() <<  "\n";
 
         #ifdef HUNGARIAN_DEBUG
         printCoverState(state.cover);
@@ -519,6 +701,28 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
 
         if (allColumnsCovered(state)) {
             if (state.starredZeros.size() != state.matrix.costs.size()) {
+                std::cout << "\n===== Hungarian Failure =====\n";
+                std::cout << "Original Tracks: "
+                        << state.matrix.originalTrackCount << "\n";
+
+                std::cout << "Original Detections: "
+                        << state.matrix.originalDetectionCount << "\n";
+
+                std::cout << "Matrix Dimension: "
+                        << state.matrix.costs.size() << "\n";
+
+                std::cout << "Starred Zeros: "
+                        << state.starredZeros.size() << "\n";
+                std::cout << "\nStarred Zeros:\n";
+
+                for (const auto& zero : state.starredZeros) {
+                    std::cout
+                        << "("
+                        << zero.row
+                        << ", "
+                        << zero.col
+                        << ")\n";
+                }
                 throw std::runtime_error ("Hungarian assignment incomplete.\n");
             }
             std::vector<Association> associations;
@@ -530,7 +734,7 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
                 if (static_cast<std::size_t>(zero.col) >= state.matrix.originalDetectionCount) {
                     continue;
                 }
-                
+
                 Association association;
                 association.trackIndex = zero.row;
                 association.detectionIndex = zero.col;
@@ -543,15 +747,50 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
 
         ZeroState uncoveredZero;
 
-        if (findUncoveredZero(state.matrix, state.cover, uncoveredZero)) {
+        bool foundUncovered = findUncoveredZero(state, uncoveredZero);
+        
+        bool starred = false;
+
+        for (const auto& zero : state.starredZeros) {
+            if (zero.row == uncoveredZero.row && zero.col == uncoveredZero.col) {
+                starred = true;
+                break;
+            }
+        }
+
+        bool primed = false;
+
+        for (const auto& zero : state.primedZeros) {
+            if (zero.row == uncoveredZero.row && zero.col == uncoveredZero.col) {
+                primed = true;
+                break;
+            }
+        }
+
+        if (foundUncovered) {
+            std::cout
+                << "Candidate status: "
+                << "starred=" << starred
+                << " primed=" << primed
+                << "\n";
+        }
+        std::cout << "Found uncovered zero: " << (foundUncovered ? "Yes" : "No") << "\n";
+
+        if (foundUncovered) {
+            std::cout << "Zero at (" << uncoveredZero.row << ", " << uncoveredZero.col << ")\n";
             primeZero(state, uncoveredZero);
+            std::cout << "Primed zero\n";
+
+            std::cout << "Checking for starred zero in row" << uncoveredZero.row << "\n";
             if (rowContainsStar(state, uncoveredZero.row)){
+                std::cout << "Row contains a starred zero\n";
                 updateCover(state, uncoveredZero.row);
                 #ifdef HUNGARIAN_DEBUG
                 printCoverState(state.cover);
                 #endif
             }
             else {
+                std::cout << "Building augmenting path\n";
                 ZeroState* prime = &state.primedZeros.back();
                 AugmentingPath path = augmentPath(state, prime);
                 
@@ -562,7 +801,8 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
                 applyAugmentingPath(state, path);
             }
         } else {
-            double minimum = findMinimumUncoveredValue(state.matrix, state.cover);
+            double minimum = findMinimumUncoveredValue(state);
+            std::cout << "Adjusting matrix by " << minimum << "\n";
             adjustMatrix(state.matrix, state.cover, minimum);
             
             #ifdef HUNGARIAN_DEBUG
