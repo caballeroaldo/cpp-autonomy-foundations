@@ -452,11 +452,13 @@ namespace {
     }
 
     void applyAugmentingPath(HungarianState& state, const AugmentingPath& path) {
+        /*
         std::cout << "\nApplying path:\n";
 
         for (const auto& node : path.coordinates) {
             std::cout << "(" << node.row << ", " << node.col << ")\n";
         }
+        */
 
         // Remove starred zeros on the path.
         for (const auto& node : path.coordinates) {
@@ -489,6 +491,8 @@ namespace {
 
         // Reinitialize the cover.
         initializeCover(state);
+        
+        /*
         std::cout << "\nStarred zeros after augmentation\n";
 
         for (const auto& zero : state.starredZeros) {
@@ -496,6 +500,7 @@ namespace {
 
         }
         std::cout << "\n";
+        */
     }
 
     //--------------------------------------------------
@@ -766,7 +771,7 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
                 break;
             }
         }
-
+        /*
         if (foundUncovered) {
             std::cout
                 << "Candidate status: "
@@ -775,15 +780,16 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
                 << "\n";
         }
         std::cout << "Found uncovered zero: " << (foundUncovered ? "Yes" : "No") << "\n";
+        */
 
         if (foundUncovered) {
-            std::cout << "Zero at (" << uncoveredZero.row << ", " << uncoveredZero.col << ")\n";
+            // std::cout << "Zero at (" << uncoveredZero.row << ", " << uncoveredZero.col << ")\n";
             primeZero(state, uncoveredZero);
-            std::cout << "Primed zero\n";
+            // std::cout << "Primed zero\n";
 
-            std::cout << "Checking for starred zero in row" << uncoveredZero.row << "\n";
+            // std::cout << "Checking for starred zero in row" << uncoveredZero.row << "\n";
             if (rowContainsStar(state, uncoveredZero.row)){
-                std::cout << "Row contains a starred zero\n";
+                // std::cout << "Row contains a starred zero\n";
                 updateCover(state, uncoveredZero.row);
                 #ifdef HUNGARIAN_DEBUG
                 printCoverState(state.cover);

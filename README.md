@@ -21,7 +21,10 @@ The goal of this repository is to strengthen:
 ## Highlights
 
 - Modular C++ multi-object tracking system
-- KD-tree accelerated data association
+- Modular data association framework
+- KD-tree accelerated greedy association
+- Hungarian optimal assignment
+- Runtime-selectable association algorithms
 - Constant-velocity Kalman Filter state estimation
 - Synthetic benchmark generation and quantitative evaluation
 - Quantitative prediction error evaluation
@@ -120,7 +123,11 @@ The perception pipeline includes a configurable benchmark generation framework t
 
 - File-based frame ingestion
 - Automatic frame discovery
-- KD-tree accelerated data association
+- Runtime-selectable data association
+      - KD-tree Greedy association
+      - Hungarian optimal assignment
+- Association benchmarking framework
+- Association runtime evaluation
 - Constant-velocity Kalman filter state estimation
 - Tuned Kalman filter parameters
 - Standalone Kalman filter validation
@@ -133,6 +140,19 @@ The perception pipeline includes a configurable benchmark generation framework t
 - Trajectory visualization
 - Tracker debug visualization (CLI)
 
+# ✅ Testing & Validation
+
+The perception pipeline includes multiple layers of verification to ensure correctness and reproducibility.
+
+Current validation includes:
+
+- Hungarian assignment unit tests
+- Regression tests derived from benchmark failures
+- Synthetic benchmark scenarios
+- Quantitative runtime benchmarking
+- Prediction error evaluation
+- Comparative evaluation between Greedy and Hungarian assignment
+
 ### Pipeline Architecture
 
 ```text
@@ -144,7 +164,9 @@ Frame Loader
           ↓
 Kalman State Estimation
           ↓
-KD-Tree Association
+Data Association
+   ├── Greedy (KD-tree)
+   └── Hungarian
           ↓
 Tracker Update
           ↓
@@ -268,13 +290,17 @@ clang++ -std=c++17 -Wall -Wextra Basics/calculator.cpp -o calculator
 - Cross-vehicle benchmark
 - Trajectory visualization
 - Tracker debug visualization
-
+- Hungarian assignment
+- Runtime-selectable association framework
+- Association benchmarking
+- Hungarian regression test suite
+- Hungarian unit test suite
 
 ### Next Milestone
 
-- Hungarian assignment for optimal data association
-- Association benchmarking and comparison
 - Identity-switch evaluation
+- Mahalanobis gating
+- Adaptable association thresholds
 
 ---
 
@@ -292,12 +318,16 @@ Completed
 - ✅ Constant-velocity Kalman filter
 - ✅ Visualization command-line interface
 - ✅ Robust benchmark scenarios
+- ✅ Hungarian assignment
+- ✅ Runtime-selectable association framework
+- ✅ Association benchmarking
+- ✅ Hungarian regression test suite
+- ✅ Hungarian unit test suite
 
 Currently Working On
 
-- 🚧 Hungarian assignment for globally optimal track-to-detection association
-
-Future Goals
+- 🚧 Identity-switch evaluation
+- 🚧 Comparative association analysis
 
 Future Goals
 
@@ -323,7 +353,7 @@ Frame Loader
           ↓
 Kalman State Estimation
           ↓
-KD-Tree Association
+Data Association
           ↓
 Tracking Update
           ↓

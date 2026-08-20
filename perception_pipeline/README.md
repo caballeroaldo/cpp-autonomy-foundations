@@ -25,7 +25,7 @@ The purpose of this project is to move from manual point entry to a more realist
 4. Track trajectories over time
 5. Evaluate tracking performance using quantitative metrics
 6. Export tracking state for visualization and debugging
-7. Build a modular architecture suitable for future Kalman filtering and sensor integration
+7. Build a modular tracking architecture supporting interchangable data association algorithms
 
 This phase bridges the gap between a terminal-based tracker and a more complete perception system.
 
@@ -36,7 +36,12 @@ This phase bridges the gap between a terminal-based tracker and a more complete 
 - File-based frame loading
 - Automatic frame discovery
 - Scenario-based benchmark generation
-- KD-tree accelerated nearest-neighbor association
+- Runtime-selectable data association
+    - KD-tree Greedy
+    - Hungarian optimal assignment
+- Association benchmarking
+- Association runtime evaluation
+- Hungarian regression testing
 - Constant-velocity Kalman Filter state estimation
 - Tuned Kalman filter parameters
 - Standalone Kalman filter validation
@@ -115,7 +120,10 @@ Provides:
 
 - `Track`
 - `Observation`
-- KD-tree matching
+- Greedy KD-tree matching
+- Hungarian optimal assignment
+- Runtime association selection
+- Association benchmarking
 - Trajectory history
 - Track lifecycle management
 
@@ -175,7 +183,9 @@ Frame Loader
           ↓
 Kalman State Estimation
           ↓
-KD-Tree Association
+Association Layer
+   ├── Greedy (KD-tree)
+   └── Hungarian
           ↓
 Track Update
           ↓
@@ -346,6 +356,19 @@ Prediction quality is evaluated using:
 - Successful associations
 - Missed associations
 
+Association algorithms evaluated:
+
+- Greedy KD-tree
+- Hungarian optimal assignment
+
+Metrics include:
+
+- Prediction error
+- Successful associations
+- Track creation/deletion
+- Association runtime
+
+
 These benchmarks provide a baseline for evaluating future motion models such as Kalman filtering.
 
 ## Benchmark Documentation
@@ -397,6 +420,45 @@ Instead of manually typing points into the terminal, the tracker now consumes de
 
 ---
 
+# Testing & Validation
+
+The perception pipeline is verified through several complementary testing strategies.
+
+## Unit Testing
+
+The Hungarian assignment implementation is validated using deterministic cost matrices covering:
+
+- Basic 3×3 assignment
+- Identity assignment
+- Diagonal minimum assignment
+- Classic 4×4 benchmark
+- False-detection regression case
+
+## Regression Testing
+
+A regression test derived from the false-detection benchmark ensures previously discovered assignment failures do not reappear.
+
+## Scenario Validation
+
+Both Greedy and Hungarian association algorithms are evaluated using the synthetic benchmark suite:
+
+- Prediction
+- Occlusion
+- Crossing
+- False Detection
+
+These scenarios validate the complete tracking pipeline under progressively more challenging conditions.
+
+## Quantitative Evaluation
+
+The tracker records:
+
+- Tracks created
+- Tracks deleted
+- Successful associations
+- Prediction error
+- Association runtime
+
 # Current Limitations
 
 The current implementation intentionally keeps the perception pipeline simple.
@@ -404,11 +466,13 @@ The current implementation intentionally keeps the perception pipeline simple.
 Known limitations:
 
 - Frame data comes from synthetic detections rather than real sensors
-- Matching is still greedy and not globally optimal
 - Uses a constant-velocity Kalman filter that assumes linear motion between observations
 - No image or video processing yet
 - No OpenCV integration yet
-- No Hungarian assignment optimization
+- No identity-switch evaluation yet
+- No association gating
+- Constant-velocity motion model
+- Synthetic detections only
 
 ---
 
@@ -421,8 +485,9 @@ Motion Models
 
 Data Association
 
-- Hungarian assignment
 - Identity-switch evaluation
+- Mahalanobis gating
+- Adaptive association thresholds
 
 Benchmarking
 
@@ -469,6 +534,10 @@ Together, they form the foundation for a future perception-style application.
 ## Completed
 - File-based detection ingestion
 - KD-tree accelerated association
+- Hungarian assignment
+- Runtime-selectable association algorithms
+- Association benchmarking 
+- Hungarian unit and regression testing
 - Constant-velocity Kalman filter
 - Kalman parameter tuning
 - Standalone Kalman filter validation
@@ -485,9 +554,10 @@ Together, they form the foundation for a future perception-style application.
 - Crossing benchmark
 
 ## In Progress
-- Hungarian Assignment
+- Identity-switch evaluation
 
 ## Planned
+- Mahalanobis gating
 - Adaptive Kalman filter tuning
 - Constant-acceleration motion model
 - Animated visualization
