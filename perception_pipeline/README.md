@@ -557,6 +557,7 @@ Together, they form the foundation for a future perception-style application.
 - Identity-switch evaluation
 
 ## Planned
+- Benchmark Automation
 - Mahalanobis gating
 - Adaptive Kalman filter tuning
 - Constant-acceleration motion model

@@ -11,6 +11,9 @@ from copy import deepcopy
 
 @dataclass(frozen=True)
 class Trajectory:
+    # Persistent identity used only for evaluation
+    # This identifier is never written to the tracker input.
+    id: int
     name: str
     start_frame: int
     end_frame: int
@@ -45,6 +48,7 @@ def add_measurement_noise(
 BASE_TRAJECTORIES: List[Trajectory] = [
     # Eastbound car
     Trajectory(
+        id=0,
         name="eastbound",
         start_frame=1,
         end_frame=10,
@@ -54,6 +58,7 @@ BASE_TRAJECTORIES: List[Trajectory] = [
 
     # Northbound car
     Trajectory(
+        id=1,
         name="northbound",
         start_frame=1,
         end_frame=10,
@@ -63,6 +68,7 @@ BASE_TRAJECTORIES: List[Trajectory] = [
 
     # Westbound car
     Trajectory(
+        id=2, 
         name="westbound",
         start_frame=1,
         end_frame=10,
@@ -72,6 +78,7 @@ BASE_TRAJECTORIES: List[Trajectory] = [
 
     # Southbound car
     Trajectory(
+        id=3,
         name="southbound",
         start_frame=1,
         end_frame=10,
@@ -81,6 +88,7 @@ BASE_TRAJECTORIES: List[Trajectory] = [
 
     # Turning vehicle
     Trajectory(
+        id=4,
         name="turning_vehicle",
         start_frame=3,
         end_frame=10,
@@ -90,6 +98,7 @@ BASE_TRAJECTORIES: List[Trajectory] = [
 
     # Late merge / late entrant
     Trajectory(
+        id=5,
         name="late_merge",
         start_frame=6,
         end_frame=10,
@@ -111,6 +120,7 @@ def acceleration_scenario() -> Scenario:
     trajectories = deepcopy(BASE_TRAJECTORIES)
 
     trajectories[0] = Trajectory(
+        id=0,
         name="eastbound",
         start_frame=1,
         end_frame=10,
@@ -130,6 +140,7 @@ def curved_scenario() -> Scenario:
     trajectories = deepcopy(BASE_TRAJECTORIES)
 
     trajectories[0] = Trajectory(
+        id=0,
         name="eastbound",
         start_frame=1,
         end_frame=10,
@@ -173,6 +184,7 @@ def crossing_scenario() -> Scenario:
     trajectories = deepcopy(BASE_TRAJECTORIES)
 
     trajectories[0] = Trajectory(
+        id=0,
         name="eastbound",
         start_frame=1,
         end_frame=10,
@@ -181,6 +193,7 @@ def crossing_scenario() -> Scenario:
     )
 
     trajectories[1] = Trajectory(
+        id=1,
         name="northbound",
         start_frame=1,
         end_frame=10,

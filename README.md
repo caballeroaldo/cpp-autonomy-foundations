@@ -331,6 +331,7 @@ Currently Working On
 
 Future Goals
 
+- ⬜ Benchmark Automation
 - ⬜ Adaptive Kalman filter tuning
 - ⬜ Constant-acceleration motion model
 - ⬜ Animated tracker visualization
