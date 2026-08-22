@@ -7,13 +7,15 @@
 basics/*
 !basics/*.cpp
 
+# data-structures/
 data-structures/*
 !data-structures/*.cpp
 
+# tracking/
 tracking/*
 !tracking/*.cpp
 !tracking/*.hpp
-!tracking/*.md
+!tracking/*.mkd
 
 # Mac system files
 .DS_Store
@@ -29,3 +31,8 @@ CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+
+# Ignore specific executables in perception_pipeline (no extension)
+perception_pipeline/perception_pipeline
+perception_pipeline/test_cost_matrix
+perception_pipeline/test_hungarian
