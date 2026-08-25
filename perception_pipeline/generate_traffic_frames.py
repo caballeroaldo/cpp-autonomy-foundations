@@ -45,7 +45,7 @@ def add_measurement_noise(
     return noise_x, noise_y
 
 # A more intersection-like synthetic traffic scene
-BASE_TRAJECTORIES: List[Trajectory] = [
+CORE_TRAJECTORIES: List[Trajectory] = [
     # Eastbound car
     Trajectory(
         id=0,
@@ -85,7 +85,9 @@ BASE_TRAJECTORIES: List[Trajectory] = [
         x_fn=lambda t: 275,
         y_fn=lambda t: 340 - 18 * t,
     ),
+]
 
+OPTIONAL_TRAJECTORIES: List[Trajectory] = [
     # Turning vehicle
     Trajectory(
         id=4,
@@ -110,14 +112,14 @@ BASE_TRAJECTORIES: List[Trajectory] = [
 def prediction_scenario() -> Scenario:
     return Scenario(
         name="prediction",
-        trajectories=deepcopy(BASE_TRAJECTORIES),
+        trajectories=deepcopy(CORE_TRAJECTORIES),
         occlusions={},
         false_detections={}
     )
 
 
 def acceleration_scenario() -> Scenario:
-    trajectories = deepcopy(BASE_TRAJECTORIES)
+    trajectories = deepcopy(CORE_TRAJECTORIES)
 
     trajectories[0] = Trajectory(
         id=0,
@@ -137,7 +139,7 @@ def acceleration_scenario() -> Scenario:
 
 
 def curved_scenario() -> Scenario:
-    trajectories = deepcopy(BASE_TRAJECTORIES)
+    trajectories = deepcopy(CORE_TRAJECTORIES)
 
     trajectories[0] = Trajectory(
         id=0,
@@ -159,7 +161,7 @@ def curved_scenario() -> Scenario:
 def occlusion_scenario() -> Scenario:
     return Scenario(
         name="occlusion",
-        trajectories=deepcopy(BASE_TRAJECTORIES),
+        trajectories=deepcopy(CORE_TRAJECTORIES),
         occlusions={
             "eastbound": {5, 6}
         },
@@ -170,7 +172,7 @@ def occlusion_scenario() -> Scenario:
 def false_detection_scenario() -> Scenario:
     return Scenario(
         name="false_detection",
-        trajectories=deepcopy(BASE_TRAJECTORIES),
+        trajectories=deepcopy(CORE_TRAJECTORIES) + deepcopy(OPTIONAL_TRAJECTORIES),
         occlusions={},
         false_detections={
             3: [(430, 60)],
@@ -181,7 +183,7 @@ def false_detection_scenario() -> Scenario:
 
 
 def crossing_scenario() -> Scenario:
-    trajectories = deepcopy(BASE_TRAJECTORIES)
+    trajectories = deepcopy(CORE_TRAJECTORIES)
 
     trajectories[0] = Trajectory(
         id=0,
@@ -200,16 +202,6 @@ def crossing_scenario() -> Scenario:
         x_fn=lambda t: 205,
         y_fn=lambda t: 30 + 16 * t,
     )
-
-    # Remove turning vehicle and late merge
-    trajectories = [
-        traj
-        for traj in trajectories
-        if traj.name not in {
-            "turning_vehicle",
-            "late_merge"
-        }
-    ]
 
     return Scenario(
         name="crossing",
@@ -246,6 +238,21 @@ def generate_points_for_frame(frame: int, scenario: Scenario, noise_std: float) 
     # Stable output order
     points.sort(key=lambda p: (p[0], p[1]))
     return points
+
+
+def write_ground_truth_tracks(scenario: Scenario, outpit_dir: Path, total_frames: int) -> None:
+    output_path = outpit_dir / "ground_truth_tracks.csv"
+
+    with output_path.open("w", encoding="utf-8") as f:
+        f.write("object_id,frame,x,y\n") 
+
+        for trajectory in scenario.trajectories:
+            for frame in range(trajectory.start_frame, trajectory.end_frame + 1):
+                local_t = frame - trajectory.start_frame
+                x = trajectory.x_fn(local_t)
+                y = trajectory.y_fn(local_t)
+                
+                f.write(f"{trajectory.id},{frame},{int(round(x))},{int(round(y))}\n")
 
 
 def main() -> int:
@@ -300,6 +307,8 @@ def main() -> int:
                 f.write(f"{x} {y}\n")
 
         print(f"Wrote {out_path} ({len(points)} detections)")
+    
+    write_ground_truth_tracks(scenario, output_dir,args.frames)
 
     return 0
 
