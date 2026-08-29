@@ -2,6 +2,7 @@
 #define IDENTITY_EVALUATOR_HPP
 
 #include <vector>
+#include <unordered_map>
 
 #include "ground_truth.hpp"
 #include "identity_assignment.hpp"
@@ -21,6 +22,6 @@ int countFragmentations(const std::vector<IdentityAssignment>& assignments);
 
 double averageTrackContinuity(const std::vector<IdentityAssignment>& assignments);
 
-double identityPreservationRate(const std::vector<IdentityAssignment>& assignments);
+double identityPreservationRate(const std::vector<IdentityAssignment>& assignments, const std::unordered_map<int, int>& identityMap);
 
 #endif

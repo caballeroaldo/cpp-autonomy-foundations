@@ -4,6 +4,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <unordered_map>
 
 namespace
 {
@@ -254,14 +255,19 @@ double averageTrackContinuity(const std::vector<IdentityAssignment>& assignments
     return totalContinuity / histories.size();
 }
 
-double identityPreservationRate(const std::vector<IdentityAssignment>& assignments) {
+double identityPreservationRate(const std::vector<IdentityAssignment>& assignments, const std::unordered_map<int, int>& identityMap) {
     if (assignments.empty()) {
         return 0.0;
     }
 
     int correctAssignments = 0.0;
     for (const auto& assignment : assignments) {
-        if (assignment.trackId == assignment.objectId) {
+        auto expected = identityMap.find(assignment.objectId);
+        if (expected == identityMap.end()) {
+            continue;
+        }
+
+        if (assignment.trackId == expected->second) {
             ++correctAssignments;
         }
     }
