@@ -3,6 +3,8 @@
 *.exe
 *.o
 
+docs/
+
 # C++ outputs built next to sources in basics/
 basics/*
 !basics/*.cpp
@@ -36,3 +38,4 @@ Makefile
 perception_pipeline/perception_pipeline
 perception_pipeline/test_cost_matrix
 perception_pipeline/test_hungarian
+perception_pipeline/frames/tmp

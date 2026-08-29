@@ -13,6 +13,8 @@
 #include "../tracking/kalman_filter.hpp"
 #include "../tracking/association.hpp"
 #include "../tracking/hungarian.hpp"
+#include "../tracking/ground_truth_reader.hpp"
+#include "../tracking/evaluation.hpp"
 #include "frame_loader.hpp"
 #include "trajectory_export.hpp"
 #include "frame_export.hpp"
@@ -45,6 +47,8 @@ vector<string> getFrameFiles(const string& folderPath) {
 
 int main(int argc, char** argv) {
     vector<ActiveTrack> activeTracks;
+    vector<Track> completedTracks;
+
     int nextTrackId = 0;
 
     TrackerConfig config;
@@ -274,6 +278,9 @@ int main(int argc, char** argv) {
             if (activeTracks[i].track.missedFrames > config.maxMissedFrames) {
                 cout << "Deleting track " << activeTracks[i].track.id << " due to inactivity.\n";
                 metrics.tracksDeleted++;
+                // Preserve the completed track for evaluation
+                completedTracks.push_back(activeTracks[i].track);
+
                 activeTracks.erase(activeTracks.begin() + i);
             }
         }
@@ -302,12 +309,38 @@ int main(int argc, char** argv) {
     std::cout << "Total Association Runtime (ms): " << totalAssociationRuntimeMs << "\n";
     std::cout << "Average Association Time (ms): " << (processedAssociationFrames > 0 ? totalAssociationRuntimeMs / processedAssociationFrames : 0.0) << "\n";
 
-    vector<Track> tracks;
+    vector<Track> allTracks = completedTracks;
     for (const ActiveTrack& activeTrack : activeTracks) {
-        tracks.push_back(activeTrack.track);
+        allTracks.push_back(activeTrack.track);
     }
 
-    exportTrackHistories(tracks, "output");
+    auto groundTruth = loadGroundTruth(frameFolder + "/ground_truth_tracks.csv");
+    EvaluationReport report = evaluateTracking(groundTruth, allTracks);
+    // Temporary print
+    std::cout << "\n========== Tracking Evaluation ==========\n";
+
+    std::cout
+        << "Identity Switches: "
+        << report.identitySwitches
+        << '\n';
+
+    std::cout
+        << "Fragmentations: "
+        << report.fragmentations
+        << '\n';
+
+    std::cout
+        << "Average Track Continuity: "
+        << report.averageTrackContinuity
+        << '\n';
+
+    std::cout
+        << "Identity Preservation Rate: "
+        << report.identityPreservationRate * 100.0
+        << "%\n";
+
+
+    exportTrackHistories(allTracks, "output");
     exportFrameData(frameRecords, "output/frame_data.csv");
 
     return 0;
