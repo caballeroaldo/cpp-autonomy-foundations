@@ -3,7 +3,6 @@
 *.exe
 *.o
 
-docs/
 
 # C++ outputs built next to sources in basics/
 basics/*

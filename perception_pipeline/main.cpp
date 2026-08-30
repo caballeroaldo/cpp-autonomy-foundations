@@ -15,6 +15,7 @@
 #include "../tracking/hungarian.hpp"
 #include "../tracking/ground_truth_reader.hpp"
 #include "../tracking/evaluation.hpp"
+#include "../tracking/report_export.hpp"
 #include "frame_loader.hpp"
 #include "trajectory_export.hpp"
 #include "frame_export.hpp"
@@ -63,6 +64,7 @@ int main(int argc, char** argv) {
     // -----------------------------
 
     string frameFolder = (argc > 1) ? argv[1] : "frames";
+    std::string outputDirectory = (argc > 3) ? argv[3] : "output";
     vector<string> frameFiles = getFrameFiles(frameFolder);
 
     if (argc > 2) {
@@ -315,33 +317,20 @@ int main(int argc, char** argv) {
     }
 
     auto groundTruth = loadGroundTruth(frameFolder + "/ground_truth_tracks.csv");
-    EvaluationReport report = evaluateTracking(groundTruth, allTracks);
-    // Temporary print
-    std::cout << "\n========== Tracking Evaluation ==========\n";
+    
+    BenchmarkReport benchmarkReport;
+    benchmarkReport.datasetName = frameFolder;
+    benchmarkReport.associationMethod = config.associationMethod;
+    benchmarkReport.evaluation = evaluateTracking(groundTruth,allTracks);
+    benchmarkReport.trackerMetrics = metrics;
+    benchmarkReport.totalAssociationRuntimeMs = totalAssociationRuntimeMs;
+    benchmarkReport.processedAssociationFrames = processedAssociationFrames;
 
-    std::cout
-        << "Identity Switches: "
-        << report.identitySwitches
-        << '\n';
-
-    std::cout
-        << "Fragmentations: "
-        << report.fragmentations
-        << '\n';
-
-    std::cout
-        << "Average Track Continuity: "
-        << report.averageTrackContinuity
-        << '\n';
-
-    std::cout
-        << "Identity Preservation Rate: "
-        << report.identityPreservationRate * 100.0
-        << "%\n";
+    exportEvaluationReport(benchmarkReport,outputDirectory);
 
 
-    exportTrackHistories(allTracks, "output");
-    exportFrameData(frameRecords, "output/frame_data.csv");
+    exportTrackHistories(allTracks, outputDirectory);
+    exportFrameData(frameRecords, outputDirectory + "/frame_data.csv");
 
     return 0;
 }
