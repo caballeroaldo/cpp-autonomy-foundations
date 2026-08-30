@@ -2,7 +2,7 @@
 
 ## Dataset
 
-perception_pipeline/frames/prediction_demo_clean 
+prediction_demo_clean 
 
 ## Association Method
 
@@ -32,6 +32,6 @@ Greedy
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.151665 |
-| Average Association Runtime (ms) | 0.0168517 |
+| Total Association Runtime (ms) | 0.091044 |
+| Average Association Runtime (ms) | 0.010116 |
 

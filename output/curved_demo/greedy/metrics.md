@@ -2,7 +2,7 @@
 
 ## Dataset
 
-perception_pipeline/frames/curved_demo 
+curved_demo 
 
 ## Association Method
 
@@ -32,6 +32,6 @@ Greedy
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.073251 |
-| Average Association Runtime (ms) | 0.008139 |
+| Total Association Runtime (ms) | 0.066416 |
+| Average Association Runtime (ms) | 0.00737956 |
 

@@ -2,7 +2,7 @@
 
 ## Dataset
 
-perception_pipeline/frames/crossing_demo 
+crossing_demo 
 
 ## Association Method
 
@@ -32,6 +32,6 @@ Hungarian
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.10775 |
-| Average Association Runtime (ms) | 0.0119722 |
+| Total Association Runtime (ms) | 0.174457 |
+| Average Association Runtime (ms) | 0.0193841 |
 

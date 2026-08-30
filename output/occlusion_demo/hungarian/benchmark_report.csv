@@ -1,0 +1,2 @@
+Dataset,Method,IdentitySwitches,Fragmentations,AverageTrackContinuity,IdentityPreservationRate,TracksCreated,TracksDeleted,SuccessfulAssociations,MissedAssociations,AveragePredictionError,MaximumPredictionError,TotalAssociationRuntimeMs,AverageAssociationRuntimeMs
+occlusion_demo,Hungarian,0,1,8.5,95,4,0,34,0,3.31426,20.3961,0.320083,0.0355648

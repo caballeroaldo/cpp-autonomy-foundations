@@ -2,7 +2,7 @@
 
 ## Dataset
 
-perception_pipeline/frames/acceleration_demo 
+acceleration_demo 
 
 ## Association Method
 
@@ -32,6 +32,6 @@ Hungarian
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.115084 |
-| Average Association Runtime (ms) | 0.0127871 |
+| Total Association Runtime (ms) | 0.121916 |
+| Average Association Runtime (ms) | 0.0135462 |
 

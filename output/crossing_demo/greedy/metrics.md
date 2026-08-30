@@ -2,7 +2,7 @@
 
 ## Dataset
 
-perception_pipeline/frames/crossing_demo 
+crossing_demo 
 
 ## Association Method
 
@@ -32,6 +32,6 @@ Greedy
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.118916 |
-| Average Association Runtime (ms) | 0.0132129 |
+| Total Association Runtime (ms) | 0.066916 |
+| Average Association Runtime (ms) | 0.00743511 |
 

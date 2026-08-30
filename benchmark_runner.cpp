@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <filesystem>
 
+#include "tracking/csv_aggregator.hpp"
+#include "tracking/benchmark_results_export.hpp"
 #include "tracking/config.hpp"
 #include "tracking/association.hpp"
 
@@ -139,6 +141,11 @@ int main() {
             failedExperimentsNames.push_back(hungarianExperiment);
         }
     }
+
+    aggregateBenchmarkReports("output");
+
+    exportBenchmarkResultsMarkdown("output/benchmark_results.csv", "docs/BENCHMARK_RESULTS.md");
+
     std::cout
         << "=====================================\n";
 

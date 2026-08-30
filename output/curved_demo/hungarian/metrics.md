@@ -2,7 +2,7 @@
 
 ## Dataset
 
-perception_pipeline/frames/curved_demo 
+curved_demo 
 
 ## Association Method
 
@@ -32,6 +32,6 @@ Hungarian
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.106832 |
-| Average Association Runtime (ms) | 0.0118702 |
+| Total Association Runtime (ms) | 0.103208 |
+| Average Association Runtime (ms) | 0.0114676 |
 

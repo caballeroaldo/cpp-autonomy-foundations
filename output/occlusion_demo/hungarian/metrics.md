@@ -2,7 +2,7 @@
 
 ## Dataset
 
-perception_pipeline/frames/occlusion_demo 
+occlusion_demo 
 
 ## Association Method
 
@@ -32,6 +32,6 @@ Hungarian
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.356668 |
-| Average Association Runtime (ms) | 0.0396298 |
+| Total Association Runtime (ms) | 0.320083 |
+| Average Association Runtime (ms) | 0.0355648 |
 

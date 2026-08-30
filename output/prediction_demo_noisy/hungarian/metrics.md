@@ -2,7 +2,7 @@
 
 ## Dataset
 
-perception_pipeline/frames/prediction_demo_noisy 
+prediction_demo_noisy 
 
 ## Association Method
 
@@ -32,6 +32,6 @@ Hungarian
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.124708 |
-| Average Association Runtime (ms) | 0.0138564 |
+| Total Association Runtime (ms) | 0.114834 |
+| Average Association Runtime (ms) | 0.0127593 |
 

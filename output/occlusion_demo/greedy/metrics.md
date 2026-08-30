@@ -2,7 +2,7 @@
 
 ## Dataset
 
-perception_pipeline/frames/occlusion_demo 
+occlusion_demo 
 
 ## Association Method
 
@@ -32,6 +32,6 @@ Greedy
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.123251 |
-| Average Association Runtime (ms) | 0.0136946 |
+| Total Association Runtime (ms) | 0.069251 |
+| Average Association Runtime (ms) | 0.00769456 |
 

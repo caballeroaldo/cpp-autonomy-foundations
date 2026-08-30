@@ -1,0 +1,2 @@
+Dataset,Method,IdentitySwitches,Fragmentations,AverageTrackContinuity,IdentityPreservationRate,TracksCreated,TracksDeleted,SuccessfulAssociations,MissedAssociations,AveragePredictionError,MaximumPredictionError,TotalAssociationRuntimeMs,AverageAssociationRuntimeMs
+occlusion_demo,Greedy,0,1,8.5,95,4,0,34,0,3.31426,20.3961,0.069251,0.00769456

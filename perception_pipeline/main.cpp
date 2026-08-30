@@ -16,6 +16,7 @@
 #include "../tracking/ground_truth_reader.hpp"
 #include "../tracking/evaluation.hpp"
 #include "../tracking/report_export.hpp"
+#include "../tracking/csv_report_export.hpp"
 #include "frame_loader.hpp"
 #include "trajectory_export.hpp"
 #include "frame_export.hpp"
@@ -319,7 +320,7 @@ int main(int argc, char** argv) {
     auto groundTruth = loadGroundTruth(frameFolder + "/ground_truth_tracks.csv");
     
     BenchmarkReport benchmarkReport;
-    benchmarkReport.datasetName = frameFolder;
+    benchmarkReport.datasetName = std::filesystem::path(frameFolder).filename().string();
     benchmarkReport.associationMethod = config.associationMethod;
     benchmarkReport.evaluation = evaluateTracking(groundTruth,allTracks);
     benchmarkReport.trackerMetrics = metrics;
@@ -327,6 +328,7 @@ int main(int argc, char** argv) {
     benchmarkReport.processedAssociationFrames = processedAssociationFrames;
 
     exportEvaluationReport(benchmarkReport,outputDirectory);
+    exportBenchmarkReportCsv(benchmarkReport,outputDirectory);
 
 
     exportTrackHistories(allTracks, outputDirectory);

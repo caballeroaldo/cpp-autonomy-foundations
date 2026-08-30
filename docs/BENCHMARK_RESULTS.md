@@ -1,0 +1,17 @@
+# Benchmark Results
+| Dataset|Method|IdentitySwitches|Fragmentations|AverageTrackContinuity|IdentityPreservationRate|TracksCreated|TracksDeleted|SuccessfulAssociations|MissedAssociations|AveragePredictionError|MaximumPredictionError|TotalAssociationRuntimeMs|AverageAssociationRuntimeMs |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| false_detection_demo|Hungarian|8|3|7.33333|62.2642|7|0|49|0|31.7335|139.628|0.265292|0.0294769 |
+| false_detection_demo|Greedy|0|0|8.83333|100|9|2|47|0|4.52031|21.2603|0.081959|0.00910656 |
+| occlusion_demo|Hungarian|0|1|8.5|95|4|0|34|0|3.31426|20.3961|0.320083|0.0355648 |
+| occlusion_demo|Greedy|0|1|8.5|95|4|0|34|0|3.31426|20.3961|0.069251|0.00769456 |
+| curved_demo|Hungarian|0|0|10|100|4|0|36|0|3.97052|20.3961|0.103208|0.0114676 |
+| curved_demo|Greedy|0|0|10|100|4|0|36|0|3.97052|20.3961|0.066416|0.00737956 |
+| crossing_demo|Hungarian|0|0|10|100|4|0|36|0|3.12809|20.3961|0.174457|0.0193841 |
+| crossing_demo|Greedy|0|0|10|100|4|0|36|0|3.12809|20.3961|0.066916|0.00743511 |
+| prediction_demo_clean|Hungarian|0|0|10|100|4|0|36|0|3.12809|20.3961|0.196456|0.0218284 |
+| prediction_demo_clean|Greedy|0|0|10|100|4|0|36|0|3.12809|20.3961|0.091044|0.010116 |
+| prediction_demo_noisy|Hungarian|0|0|10|100|4|0|36|0|12.0591|33|0.114834|0.0127593 |
+| prediction_demo_noisy|Greedy|1|0|10|77.5|5|1|35|0|12.4003|29.8296|0.147|0.0163333 |
+| acceleration_demo|Hungarian|0|0|10|100|4|0|36|0|3.92812|20.3961|0.121916|0.0135462 |
+| acceleration_demo|Greedy|0|0|10|100|4|0|36|0|3.92812|20.3961|0.069999|0.00777767 |

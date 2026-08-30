@@ -1,0 +1,2 @@
+Dataset,Method,IdentitySwitches,Fragmentations,AverageTrackContinuity,IdentityPreservationRate,TracksCreated,TracksDeleted,SuccessfulAssociations,MissedAssociations,AveragePredictionError,MaximumPredictionError,TotalAssociationRuntimeMs,AverageAssociationRuntimeMs
+acceleration_demo,Greedy,0,0,10,100,4,0,36,0,3.92812,20.3961,0.069999,0.00777767

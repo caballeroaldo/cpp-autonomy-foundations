@@ -2,7 +2,7 @@
 
 ## Dataset
 
-perception_pipeline/frames/prediction_demo_clean 
+prediction_demo_clean 
 
 ## Association Method
 
@@ -32,6 +32,6 @@ Hungarian
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.165793 |
-| Average Association Runtime (ms) | 0.0184214 |
+| Total Association Runtime (ms) | 0.196456 |
+| Average Association Runtime (ms) | 0.0218284 |
 

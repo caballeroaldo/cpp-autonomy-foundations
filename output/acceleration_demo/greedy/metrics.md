@@ -2,7 +2,7 @@
 
 ## Dataset
 
-perception_pipeline/frames/acceleration_demo 
+acceleration_demo 
 
 ## Association Method
 
@@ -32,6 +32,6 @@ Greedy
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.077375 |
-| Average Association Runtime (ms) | 0.00859722 |
+| Total Association Runtime (ms) | 0.069999 |
+| Average Association Runtime (ms) | 0.00777767 |
 
