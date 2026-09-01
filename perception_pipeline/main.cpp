@@ -115,8 +115,9 @@ int main(int argc, char** argv) {
                 
                 metrics.tracksCreated++;
             }
-
+            #ifdef PIPELINE_DEBUG
             cout << "Initialized tracks from " << filename << "\n";
+            #endif
             frameNumber++;
             continue;
         }
@@ -133,7 +134,7 @@ int main(int argc, char** argv) {
 
         auto associationStart = std::chrono::high_resolution_clock::now();
 
-        std::cout << "Assocation Method: ";
+        std::cout << "Association Method: ";
         switch (config.associationMethod) {
             case AssociationMethod::Greedy:
                 std::cout<< "Greedy\n";
@@ -235,10 +236,12 @@ int main(int argc, char** argv) {
             frameRecords.push_back(record);
             trackUsed[trackIndex] = true;
             detectionUsed[detectionIndex] = true;
-
+            
+            #ifdef TRACK_HISTORY_DEBUG
             printMatchResult(
                 detection,
                 activeTracks[trackIndex].track.id);
+            #endif
         }
 
         for (std::size_t detectionIndex = 0; detectionIndex < detectionUsed.size(); ++detectionIndex) {
@@ -263,10 +266,11 @@ int main(int argc, char** argv) {
             metrics.tracksCreated++;
 
             trackUsed.push_back(true);
-
+            #ifdef TRACK_HISTORY_DEBUG
             printNewTrackResult(
                 detection,
                 activeTrack.track.id);
+            #endif
         }
 
         for (int i = 0; i < static_cast<int>(activeTracks.size()); i++) {
@@ -288,10 +292,12 @@ int main(int argc, char** argv) {
             }
         }
 
+        #ifdef TRACK_HISTORY_DEBUG
         cout << "\nCurrent tracks:\n";
         for (const ActiveTrack& activeTrack : activeTracks) {
             printTrackHistory(activeTrack.track);
         }
+        #endif
 
         frameNumber++;
     }
@@ -301,9 +307,11 @@ int main(int argc, char** argv) {
     cout << "====================================\n";
 
     cout << "Total tracks remaining: " << activeTracks.size() << "\n";
+    #ifdef TRACK_HISTORY_DEBUG
     for (const ActiveTrack& activeTrack: activeTracks) {
         printTrackHistory(activeTrack.track);
     }
+    #endif
     printTrackerMetrics(metrics);
 
     std::cout << "\n================\n";

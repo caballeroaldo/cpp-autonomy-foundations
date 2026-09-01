@@ -1,2 +1,2 @@
 Dataset,Method,IdentitySwitches,Fragmentations,AverageTrackContinuity,IdentityPreservationRate,TracksCreated,TracksDeleted,SuccessfulAssociations,MissedAssociations,AveragePredictionError,MaximumPredictionError,TotalAssociationRuntimeMs,AverageAssociationRuntimeMs
-curved_demo,Hungarian,0,0,10,100,4,0,36,0,3.97052,20.3961,0.103208,0.0114676
+curved_demo,Hungarian,0,0,10,100,4,0,36,0,3.97052,20.3961,0.092084,0.0102316

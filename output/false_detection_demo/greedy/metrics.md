@@ -32,6 +32,6 @@ Greedy
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.081959 |
-| Average Association Runtime (ms) | 0.00910656 |
+| Total Association Runtime (ms) | 0.102042 |
+| Average Association Runtime (ms) | 0.011338 |
 

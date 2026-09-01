@@ -50,13 +50,19 @@ void KalmanFilter::update(const Point& measurement, double dt) {
     measurementVector << measurement.x, measurement.y;
 
     Eigen::Vector2d innovation = measurementVector - measurementMatrix_ * state_;
+    #ifdef KALMAN_DEBUG
     printInnovation(innovation);
+    #endif
 
     Eigen::Matrix2d innovationCovariance = measurementMatrix_ * covariance_ * measurementMatrix_.transpose() + measurementNoise_;
+    #ifdef KALMAN_DEBUG
     printInnovationCovariance(innovationCovariance);
+    #endif
 
     Eigen::Matrix<double, 4, 2> kalmanGain = covariance_ * measurementMatrix_.transpose() * innovationCovariance.inverse();
+    #ifdef KALMAN_DEBUG
     printKalmanGain(kalmanGain);
+    #endif
 
     state_ = state_ + kalmanGain * innovation;
 

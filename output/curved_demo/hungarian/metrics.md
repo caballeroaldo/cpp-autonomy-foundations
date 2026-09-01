@@ -32,6 +32,6 @@ Hungarian
 
 | Metric | Value |
 |--------|------:|
-| Total Association Runtime (ms) | 0.103208 |
-| Average Association Runtime (ms) | 0.0114676 |
+| Total Association Runtime (ms) | 0.092084 |
+| Average Association Runtime (ms) | 0.0102316 |
 

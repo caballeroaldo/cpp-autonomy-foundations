@@ -1,2 +1,2 @@
 Dataset,Method,IdentitySwitches,Fragmentations,AverageTrackContinuity,IdentityPreservationRate,TracksCreated,TracksDeleted,SuccessfulAssociations,MissedAssociations,AveragePredictionError,MaximumPredictionError,TotalAssociationRuntimeMs,AverageAssociationRuntimeMs
-crossing_demo,Greedy,0,0,10,100,4,0,36,0,3.12809,20.3961,0.066916,0.00743511
+crossing_demo,Greedy,0,0,10,100,4,0,36,0,3.12809,20.3961,0.128498,0.0142776

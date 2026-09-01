@@ -680,7 +680,9 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
     
 
     while(true) {
+        #ifdef HUNGARIAN_DEBUG
         std::cout << "Iteration " << iteration << "\n";
+        #endif
         if (++iteration > 1000) {
             throw std::runtime_error("Hungarian algorithm exceeded iteration limit");
         }
@@ -692,10 +694,10 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
                 coveredCount++;
             }
         }
-
+        #ifdef HUNGARIAN_DEBUG
         std::cout << "Covered columns: " << coveredCount << " / " << state.cover.coveredColumns.size() <<  "\n";
 
-        #ifdef HUNGARIAN_DEBUG
+        
         printCoverState(state.cover);
 
         std::cout << "Columns covered: "
@@ -706,6 +708,7 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
 
         if (allColumnsCovered(state)) {
             if (state.starredZeros.size() != state.matrix.costs.size()) {
+                #ifdef HUNGARIAN_DEBUG
                 std::cout << "\n===== Hungarian Failure =====\n";
                 std::cout << "Original Tracks: "
                         << state.matrix.originalTrackCount << "\n";
@@ -728,6 +731,7 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
                         << zero.col
                         << ")\n";
                 }
+                #endif
                 throw std::runtime_error ("Hungarian assignment incomplete.\n");
             }
             std::vector<Association> associations;
@@ -796,7 +800,9 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
                 #endif
             }
             else {
+                #ifdef HUNGARIAN_DEBUG
                 std::cout << "Building augmenting path\n";
+                #endif
                 ZeroState* prime = &state.primedZeros.back();
                 AugmentingPath path = augmentPath(state, prime);
                 
@@ -808,7 +814,9 @@ std::vector<Association> hungarianAssignment(CostMatrix matrix) {
             }
         } else {
             double minimum = findMinimumUncoveredValue(state);
+            #ifdef HUNGARIAN_DEBUG
             std::cout << "Adjusting matrix by " << minimum << "\n";
+            #endif
             adjustMatrix(state.matrix, state.cover, minimum);
             
             #ifdef HUNGARIAN_DEBUG
